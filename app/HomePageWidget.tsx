@@ -1,16 +1,19 @@
 "use client";
 
 import PieceWidget from "@/components/Piece";
-import { DARK_CELL, LIGHT_CELL, SELECTED_DARK_CELL, SELECTED_LIGHT_CELL } from "@/lib/constants";
-import { ICell } from "@/types/chessTypes";
-import { Square } from "chess.js";
-import { useState } from "react";
+import { DARK_CELL, LEGAL_HIGHLIGHT, LIGHT_CELL, SELECTED_DARK_CELL, SELECTED_LIGHT_CELL } from "@/lib/constants";
+import { Chess, Move, Square } from "chess.js";
+import { useMemo, useRef, useState } from "react";
 
-const HomePageWidget = ({ board }: {
-	board: (ICell | null)[][]
-}) => {
+const HomePageWidget = () => {
 	const [isWhiteView, setIsWhiteView] = useState<boolean>(true);
 	const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
+	const [destinationSquare, setDestinationSquare] = useState<Square | null>(null);
+
+	// const [selectedLegalMoves, setSelectedLegalMoves] = useState<Square[] | null>(null);
+
+	const chessRef = useRef(new Chess());
+	const [board, setBoard] = useState(chessRef.current.board());
 
 	const boardAligned = !isWhiteView
 		? board.map(row => row.toReversed()).reverse()
@@ -24,12 +27,54 @@ const HomePageWidget = ({ board }: {
 		? ["a", "b", "c", "d", "e", "f", "g", "h"]
 		: ["h", "g", "f", "e", "d", "c", "b", "a"];
 
+
+	const selectedLegalMoves: Move[] = useMemo(() => {
+		if (!selectedSquare) return [];
+
+		const legalMoves = chessRef.current.moves({ square: selectedSquare, verbose: true });
+		return legalMoves;
+
+	}, [selectedSquare])
+
+	const selectedLegalSquares = selectedLegalMoves.map((move) => move.to);
+	const selectedCapturableSquares = selectedLegalMoves.filter((move) => move.captured !== undefined).map((move) => move.to)
+
 	const handlePieceClick = (square: Square) => {
-		setSelectedSquare((prev) => prev == null || prev !== square ? square : null)
+		const piece = chessRef.current.get(square);
+
+		// Move and Captures
+		if (
+			selectedSquare &&
+			selectedLegalSquares.includes(square)
+		) {
+			const move = chessRef.current.move({
+				from: selectedSquare,
+				to: square,
+				promotion: "q"
+			})
+
+			setBoard(chessRef.current.board());
+			setSelectedSquare(null);
+
+			return;
+		}
+
+		// Empty square
+		if (!piece) {
+			setSelectedSquare(null);
+			return;
+		}
+
+		// Dont select opponent piece
+		if (piece.color !== chessRef.current.turn()) {
+			return;
+		}
+
+		setSelectedSquare((prev) => prev === square ? null : square);
 	}
 
 	return (
-		<div className="w-full h-full bg-red-400 p-10 flex justify-center">
+		<div className="w-full h-full p-10 flex justify-center">
 			<div className="flex-1 h-full bg-gray-400"></div>
 			<div className="size-[min(90vw,90vh)] aspect-square flex flex-col">
 				{
@@ -38,32 +83,24 @@ const HomePageWidget = ({ board }: {
 							<div key={rowIndex} className="w-full h-full flex">
 								{
 									row.map((cell, colIndex: number) => {
-										const isWhiteCellFirst = rowIndex % 2 != 0;
-										let cellColor;
-										let cellColorOpp;
-										let highlightColor;
+										const isDark = (rowIndex + colIndex) % 2 === 1;
 
-										if (isWhiteCellFirst) {
-											cellColor = colIndex % 2 == 0 ? DARK_CELL : LIGHT_CELL;
-										} else {
-											cellColor = colIndex % 2 == 0 ? LIGHT_CELL : DARK_CELL;
-										}
+										const cellColor = isDark ? DARK_CELL : LIGHT_CELL;
+										const cellColorOpp = cellColor == DARK_CELL ? LIGHT_CELL : DARK_CELL;
+										const highlightColor = cellColor == DARK_CELL ? SELECTED_DARK_CELL : SELECTED_LIGHT_CELL;
 
-										cellColorOpp = cellColor == DARK_CELL ? LIGHT_CELL : DARK_CELL;
-										highlightColor = cellColor == DARK_CELL ? SELECTED_DARK_CELL : SELECTED_LIGHT_CELL;
+										const square: Square = `${colLabels[colIndex]}${rowLabels[rowIndex]}` as Square;
 
 										return (
 											<div
 												key={colIndex}
-												className={`relative ${cell && "cursor-grab"} w-full h-full flex items-center justify-center`}
+												className={`relative ${(cell || selectedLegalSquares.includes(square)) ? "cursor-grab" : ""} w-full h-full flex items-center justify-center`}
 												style={{
 													containerType: "size",
-													backgroundColor: (cell?.square === selectedSquare) ? highlightColor : cellColor
+													backgroundColor: (square === selectedSquare) ? highlightColor : cellColor
 												}}
 												onClick={() => {
-													if (cell) {
-														handlePieceClick(cell?.square);
-													}
+													handlePieceClick(square);
 												}}
 											>
 												<span
@@ -85,6 +122,28 @@ const HomePageWidget = ({ board }: {
 												>
 													{rowIndex == 7 && colLabels[colIndex]}
 												</span>
+												<div className="absolute inset-0 size-full flex justify-center items-center">
+													{
+														selectedLegalSquares?.includes(square) && !selectedCapturableSquares.includes(square) &&
+														<span
+															className="size-1/3 rounded-full"
+															style={{
+																backgroundColor: LEGAL_HIGHLIGHT
+															}}
+														/>
+													}
+
+													{
+														selectedCapturableSquares.includes(square) &&
+														<span
+															className="size-full rounded-full"
+															style={{
+																backgroundColor: LEGAL_HIGHLIGHT
+															}}
+														/>
+													}
+
+												</div>
 
 												{
 													cell &&
