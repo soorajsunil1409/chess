@@ -1,12 +1,13 @@
-import { Chess, DEFAULT_POSITION } from "chess.js"
-import HomePageWidget from "./HomePageWidget"
+import { Chess } from "chess.js"
+import HomePageWidget from "../components/HomePageWidget"
+import { auth } from "@/auth";
 
-const HomePage = () => {
+const HomePage = async () => {
 	const chess = new Chess();
-	const board = chess.board();
+	const session = await auth();
 
 	return (
-		<HomePageWidget />
+		<HomePageWidget session={session} />
 	)
 }
 export default HomePage
