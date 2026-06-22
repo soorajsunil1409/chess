@@ -27,8 +27,6 @@ export const registerUser = async (values: unknown) => {
 		)
 	})
 
-	console.log(existingUser);
-
 	if (existingUser) {
 		const errors: {
 			username?: string[];
@@ -76,20 +74,7 @@ export async function loginUser(values: {
 		};
 	}
 
-	try {
-		await signIn("credentials", {
-			username: parsed.data.username,
-			password: parsed.data.password,
-			redirect: false,
-		});
-
-		return {
-			success: true,
-		};
-	} catch (err: any) {
-		return {
-			success: false,
-			authError: "Invalid email or password " + err,
-		};
-	}
+	return {
+		success: true,
+	};
 }

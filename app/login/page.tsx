@@ -1,21 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { loginUser } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
 import { loginSchema } from "@/lib/validations/auth";
 import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
 
 type LoginErrors =
 	z.inferFlattenedErrors<typeof loginSchema>["fieldErrors"];
 
 export default function LoginPage() {
 	const router = useRouter();
+	const { data: session } = useSession();
+
+	useEffect(() => {
+		if (session) {
+			router.replace("/");
+		}
+	}, [session, router]);
 
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
+
+	const [loading, setLoading] = useState(false);
 
 	const [errors, setErrors] = useState<LoginErrors>({});
 	const [authError, setAuthError] = useState("");
@@ -27,6 +37,8 @@ export default function LoginPage() {
 
 		setErrors({});
 		setAuthError("");
+		
+		setLoading(true);
 
 		const result = await loginUser({
 			username,
@@ -38,15 +50,24 @@ export default function LoginPage() {
 				setErrors(result.errors);
 			}
 
-			if (result.authError) {
-				setAuthError(result.authError);
-			}
-
 			return;
 		}
 
-		// window.location.href = "/";
-		router.push("/");
+		const signInResult = await signIn("credentials", {
+			username,
+			password,
+			redirect: false,
+		});
+
+		setLoading(false);
+
+		if (signInResult?.error) {
+			setAuthError(signInResult.error);
+			return;
+		}
+
+		router.replace("/");
+		router.refresh();
 	};
 
 	return (
@@ -108,9 +129,10 @@ export default function LoginPage() {
 
 					<Button
 						type="submit"
+						disabled={loading}
 						className="h-12 bg-white text-black hover:bg-zinc-200"
 					>
-						Sign In
+						{loading ? "Signing In..." : "Sign In"}
 					</Button>
 				</form>
 
