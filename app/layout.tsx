@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { SessionProvider } from "next-auth/react";
 import Providers from "./providers";
+import SocketProvider from "@/providers/SocketProvider";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
 		>
 			<body className="w-full h-full flex flex-col">
 				<Providers>
+					<SocketProvider />
 					<Navbar />
 					{children}
 				</Providers>
