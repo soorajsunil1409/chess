@@ -1,4 +1,4 @@
-import { OnlinePlayer } from "@/lib/server";
+import { OnlinePlayer } from "@/lib/socket/stores/onlineUsers";
 import { create } from "zustand";
 
 interface OnlineStore {

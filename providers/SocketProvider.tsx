@@ -3,18 +3,17 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { socket } from "@/lib/socket";
-import { useOnlinePlayers } from "@/hooks/useOnlinePlayes";
 import { useOnlineStore } from "@/store/onlineStore";
-import { OnlinePlayer } from "@/lib/server";
+import { Challenge, useChallengeStore } from "@/store/challengeStore";
 
 export default function SocketProvider() {
 	const { data: session, status } = useSession();
 
-	const setPlayers = useOnlineStore((state) => state.setPlayers)
+	const setPlayers = useOnlineStore((state) => state.setPlayers);
+	const setChallenges = useChallengeStore((state) => state.setChallenges);
 
 	useEffect(() => {
 		const handlePlayers = (players: any[]) => {
-			console.log("Received:", players);
 			setPlayers(players);
 		};
 
@@ -29,9 +28,6 @@ export default function SocketProvider() {
 	useEffect(() => {
 		if (status !== "authenticated") return;
 
-		console.log("Connecting");
-		console.log("Session changed", session);
-
 		socket.auth = {
 			userId: session?.user?.id,
 			username: session?.user?.name,
@@ -40,10 +36,22 @@ export default function SocketProvider() {
 		socket.connect();
 
 		return () => {
-			console.log("Disconnecting");
 			socket.disconnect();
 		};
 	}, [status, session]);
+
+	useEffect(() => {
+		const handleUpdateChallenges = (challenges: Challenge[]) => {
+			console.log(challenges);
+			setChallenges(challenges);
+		}
+
+		socket.on("challenges:update", handleUpdateChallenges);
+
+		return () => {
+			socket.off("challenges:update", handleUpdateChallenges)
+		}
+	}, []);
 
 	return null;
 }

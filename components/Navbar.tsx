@@ -1,11 +1,18 @@
 "use client"
 
+import { socket } from "@/lib/socket";
+import { useChallengeStore } from "@/store/challengeStore";
+import { useOnlineStore } from "@/store/onlineStore";
+import { Bell, Check, Cross, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 const Navbar = () => {
 	const router = useRouter();
 	const { data: session, status } = useSession();
+
+	const challenges = useChallengeStore((state) => state.challenges);
+	const players = useOnlineStore((state) => state.players);
 
 	return (
 		<nav className="border-b border-zinc-800 bg-zinc-950">
@@ -67,12 +74,39 @@ const Navbar = () => {
 									Sign Up
 								</button>
 							</> :
-							<button
-								className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
-								onClick={() => signOut()}
-							>
-								Sign Out
-							</button>
+							<div className="flex gap-5 items-center">
+								<div className="w-max relative">
+									<Bell className="cursor-pointer" color="white" fill="white" />
+									{
+										challenges.length !== 0 &&
+										<span className="absolute -top-1 right-0 size-1/2 aspect-square text-center bg-red-500 font-bold rounded-full" />
+									}
+
+									<div className="absolute top-10 right-0 flex flex-col bg-zinc-500 w-max p-3 rounded-md gap-5">
+										{
+											challenges.map((challenge) => (
+												<div key={challenge.challengeId} className="flex gap-3 items-center">
+													<div>You have a challenge from {challenge.fromUsername}</div>
+													<Check
+														className="bg-green-500 rounded-full p-1.5 h-full aspect-square w-auto text-white"
+														onClick={() => socket.emit("challenge:accept", challenge.challengeId)}
+													/>
+													<X
+														className="bg-red-400 rounded-full p-1.5 h-full aspect-square w-auto text-white"
+														onClick={() => socket.emit("challenge:decline", challenge.challengeId)}
+													/>
+												</div>
+											))
+										}
+									</div>
+								</div>
+								<button
+									className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
+									onClick={() => signOut()}
+								>
+									Sign Out
+								</button>
+							</div>
 					}
 				</div>
 			</div>

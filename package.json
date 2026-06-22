@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\" \"tsx lib/server.ts\"",
+    "dev": "next dev",
     "build": "next build",
     "start": "concurrently \"next start\" \"tsx lib/server.ts\"",
     "lint": "eslint"
