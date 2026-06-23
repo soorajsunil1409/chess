@@ -22,29 +22,35 @@ export default function SocketProvider() {
 		socket.on("players:online", handlePlayers);
 
 		return () => {
-			console.log("Removing listener");
 			socket.off("players:online", handlePlayers);
 		};
 	}, [setPlayers]);
 
 	useEffect(() => {
-		if (status !== "authenticated") return;
+		if (
+			status !== "authenticated" ||
+			!session?.user
+		)
+			return;
 
-		socket.auth = {
-			userId: session?.user?.id,
-			username: session?.user?.name,
-		};
+		if (!socket.connected) {
+			socket.auth = {
+				userId: session.user.id,
+				username: session.user.name,
+			};
 
-		socket.connect();
+			socket.connect();
+		}
+	}, [status]);
 
-		return () => {
+	useEffect(() => {
+		if (status === "unauthenticated") {
 			socket.disconnect();
-		};
-	}, [status, session]);
+		}
+	}, [status]);
 
 	useEffect(() => {
 		const handleUpdateChallenges = (challenges: Challenge[]) => {
-			console.log(challenges);
 			setChallenges(challenges);
 		}
 
@@ -56,9 +62,8 @@ export default function SocketProvider() {
 	}, []);
 
 	useEffect(() => {
-		const handleGame = ({gameId}: {gameId: string}) => {
+		const handleGame = ({ gameId }: { gameId: string }) => {
 			router.push(`/game/${gameId}`);
-			// console.log(gameId);
 		}
 
 		socket.on("game:start", handleGame);

@@ -5,3 +5,5 @@ export const SELECTED_DARK_CELL = "#bdca5e";
 export const SELECTED_LIGHT_CELL = "#f5ff9a";
 
 export const LEGAL_HIGHLIGHT = "#00000020";
+
+export const CHECK_HIGHLIGHT_COLOR = "#ff293a";

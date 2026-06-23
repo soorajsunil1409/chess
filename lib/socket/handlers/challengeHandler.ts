@@ -46,8 +46,6 @@ export const registerChallengeHandlers = (
 				challengeId
 			);
 
-		console.log(challenge);
-
 		if (!challenge)
 			return;
 
@@ -88,7 +86,8 @@ export const registerChallengeHandlers = (
 			whitePlayerUsername: challenge.fromUsername,
 			blackPlayerId: challenge.toUserId,
 			blackPlayerUsername: challenge.toUsername,
-			status: "waiting"
+			status: "waiting",
+			lastMove: null
 		});
 
 		chessGames.set(

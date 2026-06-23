@@ -31,8 +31,6 @@ const emitChallengesForUser = (
 				userId
 		);
 
-	console.log("Updating challenges for " + user.username);
-
 	io.to(user.socketId).emit(
 		"challenges:update",
 		userChallenges
@@ -67,7 +65,6 @@ io.on("connection", (socket) => {
 		const game = games.get(gameId);
 
 		if (!game) {
-			console.log("Game not found");
 			socket.emit(
 				"game:error",
 				"Game not found"
@@ -82,7 +79,6 @@ io.on("connection", (socket) => {
 			userId;
 
 		if (!isPlayer) {
-			console.log("Unauthorized");
 			socket.emit(
 				"game:error",
 				"Unauthorized"
@@ -90,20 +86,135 @@ io.on("connection", (socket) => {
 			return;
 		}
 
-		const chess = chessGames.get(gameId);
-
 		socket.join(gameId);
 
+		const chess = chessGames.get(gameId);
+
+		if (!chess) {
+			socket.emit("game:error", "Game not found");
+			return;
+		}
+
 		socket.emit("game:state", {
-			fen: chess?.fen(),
+			fen: chess.fen(),
+
+			lastMove: game.lastMove,
+
+			turn: chess.turn(),
+
+			status: {
+				isCheck: chess.isCheck(),
+				isCheckMate: chess.isCheckmate(),
+				isDraw: chess.isDraw(),
+				isGameOver: chess.isGameOver(),
+				isStalemate: chess.isStalemate(),
+				isThreefoldRepetition:
+					chess.isThreefoldRepetition(),
+				isInsufficientMaterial:
+					chess.isInsufficientMaterial(),
+			},
+
 			whitePlayerId: game.whitePlayerId,
-			whitePlayerUsername: game.whitePlayerUsername,
+			whitePlayerUsername:
+				game.whitePlayerUsername,
+
 			blackPlayerId: game.blackPlayerId,
-			blackPlayerUsername: game.blackPlayerUsername,
-		})
+			blackPlayerUsername:
+				game.blackPlayerUsername,
+		});
 	})
 
-	socket.on("disconnect", () => {
+	socket.on(
+		"game:move",
+		({
+			gameId,
+			from,
+			to,
+			promotion,
+		}) => {
+			const game =
+				games.get(gameId);
+
+			if (!game) return;
+
+			const chess =
+				chessGames.get(gameId);
+
+			if (!chess) return;
+
+			const isPlayer =
+				game.whitePlayerId === userId ||
+				game.blackPlayerId === userId;
+
+			if (!isPlayer) return;
+
+			try {
+				const move =
+					chess.move({
+						from,
+						to,
+						promotion,
+					});
+
+				if (!move) {
+					socket.emit(
+						"game:error",
+						"Invalid move"
+					);
+					return;
+				}
+
+				game.lastMove = {
+					from: move.from,
+					to: move.to,
+					piece: move.piece,
+					color: move.color,
+					captured: move.captured,
+					san: move.san,
+				};
+
+				io.to(gameId).emit("game:update", {
+					fen: chess.fen(),
+
+					lastMove: game.lastMove,
+
+					turn: chess.turn(),
+
+					status: {
+						isCheck: chess.isCheck(),
+						isCheckMate: chess.isCheckmate(),
+						isDraw: chess.isDraw(),
+						isGameOver: chess.isGameOver(),
+						isStalemate: chess.isStalemate(),
+						isThreefoldRepetition:
+							chess.isThreefoldRepetition(),
+						isInsufficientMaterial:
+							chess.isInsufficientMaterial(),
+					},
+
+					players: {
+						white: {
+							id: game.whitePlayerId,
+							username:
+								game.whitePlayerUsername,
+						},
+						black: {
+							id: game.blackPlayerId,
+							username:
+								game.blackPlayerUsername,
+						},
+					},
+				});
+			} catch {
+				socket.emit(
+					"game:error",
+					"Invalid move"
+				);
+			}
+		}
+	);
+
+	socket.on("disconnect", (reason) => {
 		const user = onlineUsers.get(userId);
 
 		if (
@@ -112,6 +223,8 @@ io.on("connection", (socket) => {
 		) {
 			onlineUsers.delete(userId);
 		}
+
+		// socket._cleanup();
 
 		// for (const [
 		// 	challengeId,
@@ -135,24 +248,24 @@ io.on("connection", (socket) => {
 	});
 });
 
-setInterval(() => {
-	const now = Date.now();
+// setInterval(() => {
+// 	const now = Date.now();
 
-	for (const [
-		challengeId,
-		challenge,
-	] of challenges.entries()) {
-		if (
-			now -
-			challenge.createdAt >
-			60_000
-		) {
-			challenges.delete(
-				challengeId
-			);
-		}
-	}
-}, 10 * 60 * 1000);
+// 	for (const [
+// 		challengeId,
+// 		challenge,
+// 	] of challenges.entries()) {
+// 		if (
+// 			now -
+// 			challenge.createdAt >
+// 			60_000
+// 		) {
+// 			challenges.delete(
+// 				challengeId
+// 			);
+// 		}
+// 	}
+// }, 10 * 60 * 1000);
 
 httpServer.listen(5001, "0.0.0.0", () => {
 	console.log("Socket Server Running at 5001");

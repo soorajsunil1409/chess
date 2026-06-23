@@ -10,7 +10,7 @@ const GamePage = async ({
 	const { gameId } = await params;
 
 	return (
-		<div className="h-full">
+		<div className="h-full w-full">
 			<GamePageWidget gameId={gameId} />
 		</div>
 	)

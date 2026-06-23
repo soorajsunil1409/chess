@@ -38,7 +38,6 @@ export default function SignupPage() {
 
 		if (!result.success) {
 			setErrors(result.errors ?? {});
-			console.log(result.errors);
 			return;
 		}
 
