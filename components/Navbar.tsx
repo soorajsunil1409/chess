@@ -2,8 +2,7 @@
 
 import { socket } from "@/lib/socket";
 import { useChallengeStore } from "@/store/challengeStore";
-import { useOnlineStore } from "@/store/onlineStore";
-import { Bell, Check, Cross, X } from "lucide-react";
+import { Bell, Check, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -12,7 +11,6 @@ const Navbar = () => {
 	const { data: session, status } = useSession();
 
 	const challenges = useChallengeStore((state) => state.challenges);
-	const players = useOnlineStore((state) => state.players);
 
 	return (
 		<nav className="border-b border-zinc-800 bg-zinc-950">

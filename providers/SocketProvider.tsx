@@ -5,9 +5,11 @@ import { useSession } from "next-auth/react";
 import { socket } from "@/lib/socket";
 import { useOnlineStore } from "@/store/onlineStore";
 import { Challenge, useChallengeStore } from "@/store/challengeStore";
+import { useRouter } from "next/navigation";
 
 export default function SocketProvider() {
 	const { data: session, status } = useSession();
+	const router = useRouter();
 
 	const setPlayers = useOnlineStore((state) => state.setPlayers);
 	const setChallenges = useChallengeStore((state) => state.setChallenges);
@@ -52,6 +54,19 @@ export default function SocketProvider() {
 			socket.off("challenges:update", handleUpdateChallenges)
 		}
 	}, []);
+
+	useEffect(() => {
+		const handleGame = ({gameId}: {gameId: string}) => {
+			router.push(`/game/${gameId}`);
+			// console.log(gameId);
+		}
+
+		socket.on("game:start", handleGame);
+
+		return () => {
+			socket.off("game:start", handleGame);
+		}
+	}, [router])
 
 	return null;
 }

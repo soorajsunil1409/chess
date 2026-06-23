@@ -1,10 +1,11 @@
 import { Chess, Move, PieceSymbol, Square } from "chess.js";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CapturedPiecesWidget from "../CapturedPiecesWidget";
 import PieceWidget from "../Piece";
 import { DARK_CELL, LEGAL_HIGHLIGHT, LIGHT_CELL, SELECTED_DARK_CELL, SELECTED_LIGHT_CELL } from "@/lib/constants";
+import { GameState } from "@/lib/socket/stores/games";
 
-const BoardWidget = () => {
+const BoardWidget = ({ gameState }: { gameState: GameState }) => {
 	const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
 	const [whitesCapturedPieces, setWhitesCapturedPieces] = useState<PieceSymbol[] | []>([]);
 	const [blacksCapturedPieces, setBlacksCapturedPieces] = useState<PieceSymbol[] | []>([]);
@@ -12,6 +13,16 @@ const BoardWidget = () => {
 
 	const chessRef = useRef(new Chess());
 	const [board, setBoard] = useState(chessRef.current.board());
+
+	useEffect(() => {
+		console.log(gameState);
+
+		chessRef.current.load(gameState.fen);
+
+		setBoard(
+			chessRef.current.board()
+		);
+	}, [gameState.fen]);
 
 	const boardAligned = !isWhiteView
 		? board.map(row => row.toReversed()).reverse()
@@ -84,12 +95,14 @@ const BoardWidget = () => {
 		setSelectedSquare((prev) => prev === square ? null : square);
 	}
 
-	return (
-		<div className="bg-[#333333] p-2 rounded flex flex-col gap-2 shadow-2xl">
-			{/* Black Player */}
-			<CapturedPiecesWidget capturedPieces={topCapturedPieces} color={isWhiteView ? "w" : "b"} />
+	const topPlayer = isWhiteView ? gameState.blackPlayerUsername : gameState.whitePlayerUsername;
+	const bottomPlayer = isWhiteView ? gameState.whitePlayerUsername : gameState.blackPlayerUsername;
 
-			<div className="size-[min(92vw,66vh)] max-size-full aspect-square flex flex-col">
+	return (
+		<div className="bg-[#333333] p-2 rounded flex flex-col gap-2 shadow-2xl h-full">
+			<CapturedPiecesWidget capturedPieces={topCapturedPieces} color={isWhiteView ? "w" : "b"} name={topPlayer} />
+
+			<div className=" max-size-full size-[min(92vw,71vh)] aspect-square flex flex-col">
 				{
 					boardAligned.map((row, rowIndex) => (
 						<div key={rowIndex} className="flex-1 flex">
@@ -198,7 +211,7 @@ const BoardWidget = () => {
 			</div>
 
 			{/* White Player */}
-			<CapturedPiecesWidget capturedPieces={bottomCapturedPieces} color={isWhiteView ? "b" : "w"} />
+			<CapturedPiecesWidget capturedPieces={bottomCapturedPieces} color={isWhiteView ? "b" : "w"} name={bottomPlayer} />
 
 			<button
 				onClick={() => setIsWhiteView(prev => !prev)}

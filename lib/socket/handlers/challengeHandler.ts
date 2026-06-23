@@ -2,6 +2,8 @@ import { Server, Socket } from "socket.io";
 import { onlineUsers } from "../stores/onlineUsers";
 import { emitChallengesForUser } from "../utils/emitChanges";
 import { challenges } from "../stores/challenges";
+import { chessGames, games } from "../stores/games";
+import { Chess } from "chess.js";
 
 
 export const registerChallengeHandlers = (
@@ -22,7 +24,7 @@ export const registerChallengeHandlers = (
 			fromUserId: userId,
 			fromUsername: challenger.username,
 			toUserId: targetUserId,
-			toUsername: challenger.username,
+			toUsername: target.username,
 			createdAt: Date.now()
 		}
 
@@ -43,6 +45,8 @@ export const registerChallengeHandlers = (
 			challenges.get(
 				challengeId
 			);
+
+		console.log(challenge);
 
 		if (!challenge)
 			return;
@@ -77,6 +81,20 @@ export const registerChallengeHandlers = (
 
 		const gameId =
 			crypto.randomUUID();
+
+		games.set(gameId, {
+			gameId: gameId,
+			whitePlayerId: challenge.fromUserId,
+			whitePlayerUsername: challenge.fromUsername,
+			blackPlayerId: challenge.toUserId,
+			blackPlayerUsername: challenge.toUsername,
+			status: "waiting"
+		});
+
+		chessGames.set(
+			gameId,
+			new Chess()
+		);
 
 		io.to(
 			challenger.socketId

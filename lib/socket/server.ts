@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import { registerChallengeHandlers } from "./handlers/challengeHandler";
 import { onlineUsers } from "./stores/onlineUsers";
 import { challenges } from "./stores/challenges";
+import { chessGames, games } from "./stores/games";
 
 const httpServer = createServer();
 
@@ -13,7 +14,7 @@ const io = new Server(httpServer, {
 		methods: ["GET", "POST"],
 		credentials: true,
 	}
-})
+});
 
 const emitChallengesForUser = (
 	userId: string
@@ -27,7 +28,7 @@ const emitChallengesForUser = (
 		[...challenges.values()].filter(
 			(challenge) =>
 				challenge.toUserId ===
-					userId
+				userId
 		);
 
 	console.log("Updating challenges for " + user.username);
@@ -61,6 +62,46 @@ io.on("connection", (socket) => {
 		socket,
 		userId
 	)
+
+	socket.on("game:join", (gameId: string) => {
+		const game = games.get(gameId);
+
+		if (!game) {
+			console.log("Game not found");
+			socket.emit(
+				"game:error",
+				"Game not found"
+			);
+			return;
+		}
+
+		const isPlayer =
+			game.whitePlayerId ===
+			userId ||
+			game.blackPlayerId ===
+			userId;
+
+		if (!isPlayer) {
+			console.log("Unauthorized");
+			socket.emit(
+				"game:error",
+				"Unauthorized"
+			);
+			return;
+		}
+
+		const chess = chessGames.get(gameId);
+
+		socket.join(gameId);
+
+		socket.emit("game:state", {
+			fen: chess?.fen(),
+			whitePlayerId: game.whitePlayerId,
+			whitePlayerUsername: game.whitePlayerUsername,
+			blackPlayerId: game.blackPlayerId,
+			blackPlayerUsername: game.blackPlayerUsername,
+		})
+	})
 
 	socket.on("disconnect", () => {
 		const user = onlineUsers.get(userId);
