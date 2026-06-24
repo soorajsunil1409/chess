@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import { SessionProvider } from "next-auth/react";
+import { Toaster } from "sonner";
 import Providers from "./providers";
 import SocketProvider from "@/providers/SocketProvider";
 
@@ -36,6 +36,7 @@ export default function RootLayout({
 					<SocketProvider />
 					<Navbar />
 					{children}
+					<Toaster richColors position="top-right" />
 				</Providers>
 			</body>
 		</html>

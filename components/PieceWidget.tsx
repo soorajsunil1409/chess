@@ -1,6 +1,4 @@
 import { Color, PieceSymbol } from "chess.js";
-import { ChessBishop, ChessKing, ChessKnight, ChessPawn, ChessQueen, ChessRook } from "lucide-react";
-import Image from "next/image";
 
 const PieceWidget = ({
 	type, color

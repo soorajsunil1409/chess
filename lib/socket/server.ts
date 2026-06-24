@@ -5,6 +5,7 @@ import { registerChallengeHandlers } from "./handlers/challengeHandler";
 import { onlineUsers } from "./stores/onlineUsers";
 import { challenges } from "./stores/challenges";
 import { chessGames, games } from "./stores/games";
+import { updateGameState } from "./utils/gameUtils";
 
 const httpServer = createServer();
 
@@ -62,7 +63,7 @@ io.on("connection", (socket) => {
 	)
 
 	socket.on("game:join", (gameId: string) => {
-		const game = games.get(gameId);
+		let game = games.get(gameId);
 
 		if (!game) {
 			socket.emit(
@@ -95,33 +96,9 @@ io.on("connection", (socket) => {
 			return;
 		}
 
-		socket.emit("game:state", {
-			fen: chess.fen(),
+		game = updateGameState(game, chess, null);
 
-			lastMove: game.lastMove,
-
-			turn: chess.turn(),
-
-			status: {
-				isCheck: chess.isCheck(),
-				isCheckMate: chess.isCheckmate(),
-				isDraw: chess.isDraw(),
-				isGameOver: chess.isGameOver(),
-				isStalemate: chess.isStalemate(),
-				isThreefoldRepetition:
-					chess.isThreefoldRepetition(),
-				isInsufficientMaterial:
-					chess.isInsufficientMaterial(),
-			},
-
-			whitePlayerId: game.whitePlayerId,
-			whitePlayerUsername:
-				game.whitePlayerUsername,
-
-			blackPlayerId: game.blackPlayerId,
-			blackPlayerUsername:
-				game.blackPlayerUsername,
-		});
+		socket.emit("game:state", game);
 	})
 
 	socket.on(
@@ -132,13 +109,14 @@ io.on("connection", (socket) => {
 			to,
 			promotion,
 		}) => {
-			const game =
+			let game =
 				games.get(gameId);
 
 			if (!game) return;
 
 			const chess =
 				chessGames.get(gameId);
+
 
 			if (!chess) return;
 
@@ -164,47 +142,9 @@ io.on("connection", (socket) => {
 					return;
 				}
 
-				game.lastMove = {
-					from: move.from,
-					to: move.to,
-					piece: move.piece,
-					color: move.color,
-					captured: move.captured,
-					san: move.san,
-				};
+				game = updateGameState(game, chess, move);
 
-				io.to(gameId).emit("game:update", {
-					fen: chess.fen(),
-
-					lastMove: game.lastMove,
-
-					turn: chess.turn(),
-
-					status: {
-						isCheck: chess.isCheck(),
-						isCheckMate: chess.isCheckmate(),
-						isDraw: chess.isDraw(),
-						isGameOver: chess.isGameOver(),
-						isStalemate: chess.isStalemate(),
-						isThreefoldRepetition:
-							chess.isThreefoldRepetition(),
-						isInsufficientMaterial:
-							chess.isInsufficientMaterial(),
-					},
-
-					players: {
-						white: {
-							id: game.whitePlayerId,
-							username:
-								game.whitePlayerUsername,
-						},
-						black: {
-							id: game.blackPlayerId,
-							username:
-								game.blackPlayerUsername,
-						},
-					},
-				});
+				io.to(gameId).emit("game:update", game);
 			} catch {
 				socket.emit(
 					"game:error",
@@ -247,25 +187,6 @@ io.on("connection", (socket) => {
 		);
 	});
 });
-
-// setInterval(() => {
-// 	const now = Date.now();
-
-// 	for (const [
-// 		challengeId,
-// 		challenge,
-// 	] of challenges.entries()) {
-// 		if (
-// 			now -
-// 			challenge.createdAt >
-// 			60_000
-// 		) {
-// 			challenges.delete(
-// 				challengeId
-// 			);
-// 		}
-// 	}
-// }, 10 * 60 * 1000);
 
 httpServer.listen(5001, "0.0.0.0", () => {
 	console.log("Socket Server Running at 5001");

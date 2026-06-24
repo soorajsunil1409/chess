@@ -9,24 +9,14 @@ export type LastMove = {
 	san: string,
 }
 
-export interface Game {
+export type GameState = {
 	gameId: string;
 
-	whitePlayerId: string;
-	whitePlayerUsername: string;
-
-	blackPlayerId: string;
-	blackPlayerUsername: string;
-
-	status: "waiting" | "active" | "finished";
-
-	lastMove: LastMove | null;
-}
-
-export type GameState = {
 	fen: string;
 
 	lastMove: LastMove | null;
+
+	history: string[],
 
 	turn: Color;
 
@@ -38,7 +28,16 @@ export type GameState = {
 		isStalemate: boolean;
 		isThreefoldRepetition: boolean;
 		isInsufficientMaterial: boolean;
+	} | null;
+
+	material: {
+		white: number;
+		black: number;
+		advantage: number;
 	};
+
+	whitesCapturedPieces: PieceSymbol[];
+	blacksCapturedPieces: PieceSymbol[];
 
 	whitePlayerId: string;
 	whitePlayerUsername: string;
@@ -46,6 +45,6 @@ export type GameState = {
 	blackPlayerUsername: string;
 };
 
-export const games = new Map<string, Game>();
+export const games = new Map<string, GameState>();
 
 export const chessGames = new Map<string, Chess>();

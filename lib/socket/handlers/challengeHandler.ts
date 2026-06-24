@@ -4,6 +4,7 @@ import { emitChallengesForUser } from "../utils/emitChanges";
 import { challenges } from "../stores/challenges";
 import { chessGames, games } from "../stores/games";
 import { Chess } from "chess.js";
+import { initializeGame } from "../utils/gameUtils";
 
 
 export const registerChallengeHandlers = (
@@ -14,6 +15,17 @@ export const registerChallengeHandlers = (
 		const target = onlineUsers.get(targetUserId);
 
 		if (!challenger || !target) {
+			return;
+		}
+
+		const existingChallenge = challenges.values().find(
+			(challenge) =>
+				(challenge.fromUserId === challenger.userId &&
+				challenge.toUserId === target.userId)
+		)
+		
+		if (existingChallenge) {
+			io.to(challenger.socketId).emit("challenge:error", "Challenge already sent");
 			return;
 		}
 
@@ -80,20 +92,14 @@ export const registerChallengeHandlers = (
 		const gameId =
 			crypto.randomUUID();
 
-		games.set(gameId, {
-			gameId: gameId,
-			whitePlayerId: challenge.fromUserId,
-			whitePlayerUsername: challenge.fromUsername,
-			blackPlayerId: challenge.toUserId,
-			blackPlayerUsername: challenge.toUsername,
-			status: "waiting",
-			lastMove: null
-		});
+		const newChess = new Chess();
 
 		chessGames.set(
 			gameId,
-			new Chess()
+			newChess
 		);
+
+		games.set(gameId, initializeGame(gameId, newChess, challenge));
 
 		io.to(
 			challenger.socketId
@@ -147,11 +153,29 @@ export const registerChallengeHandlers = (
 					challenger.socketId
 				).emit(
 					"challenge:declined",
-					{
-						challengeId,
-					}
+					`${challenge.toUsername} declined your challenge`
 				);
 			}
 		}
 	);
 }
+
+
+setInterval(() => {
+	const now = Date.now();
+
+	for (const [
+		challengeId,
+		challenge,
+	] of challenges.entries()) {
+		if (
+			now -
+			challenge.createdAt >
+			60_000
+		) {
+			challenges.delete(
+				challengeId
+			);
+		}
+	}
+}, 10 * 1000);

@@ -1,18 +1,12 @@
-import { Chess, Color, Move, PieceSymbol, Square } from "chess.js";
+import { Chess, Move, Square } from "chess.js";
 import { useEffect, useMemo, useRef, useState } from "react";
-import CapturedPiecesWidget from "../CapturedPiecesWidget";
-import PieceWidget from "../Piece";
+import PieceWidget from "../PieceWidget";
 import { CHECK_HIGHLIGHT_COLOR, DARK_CELL, LEGAL_HIGHLIGHT, LIGHT_CELL, SELECTED_DARK_CELL, SELECTED_LIGHT_CELL } from "@/lib/constants";
 import { GameState } from "@/lib/socket/stores/games";
 import { socket } from "@/lib/socket";
-import { useSession } from "next-auth/react";
 
-const BoardWidget = ({ gameState, gameId }: { gameState: GameState, gameId: string }) => {
-	const { data: session } = useSession();
-
+const BoardWidget = ({ gameState, gameId, isWhiteView }: { gameState: GameState, gameId: string, isWhiteView: boolean }) => {
 	const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
-	const [whitesCapturedPieces, setWhitesCapturedPieces] = useState<PieceSymbol[] | []>([]);
-	const [blacksCapturedPieces, setBlacksCapturedPieces] = useState<PieceSymbol[] | []>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const chessRef = useRef(new Chess());
@@ -31,8 +25,6 @@ const BoardWidget = ({ gameState, gameId }: { gameState: GameState, gameId: stri
 		setIsSubmitting(false);
 		setSelectedSquare(null);
 	}, [gameState.fen]);
-
-	const isWhiteView = gameState.whitePlayerId === session?.user?.id;
 
 	const boardAligned = !isWhiteView
 		? board.map(row => row.toReversed()).reverse()
@@ -57,9 +49,6 @@ const BoardWidget = ({ gameState, gameId }: { gameState: GameState, gameId: stri
 
 	const selectedLegalSquares = selectedLegalMoves.map((move) => move.to);
 	const selectedCapturableSquares = selectedLegalMoves.filter((move) => move.captured !== undefined).map((move) => move.to)
-
-	const bottomCapturedPieces = isWhiteView ? whitesCapturedPieces : blacksCapturedPieces;
-	const topCapturedPieces = isWhiteView ? blacksCapturedPieces : whitesCapturedPieces;
 
 	const handlePieceClick = (square: Square) => {
 		if (isSubmitting) return;
@@ -102,14 +91,8 @@ const BoardWidget = ({ gameState, gameId }: { gameState: GameState, gameId: stri
 		setSelectedSquare((prev) => prev === square ? null : square);
 	}
 
-	const topPlayer = isWhiteView ? gameState.blackPlayerUsername : gameState.whitePlayerUsername;
-	const bottomPlayer = isWhiteView ? gameState.whitePlayerUsername : gameState.blackPlayerUsername;
-
 	return (
-		<div className="bg-[#333333] p-2 rounded flex flex-col gap-2 shadow-2xl h-full w-fit justify-center">
-			<CapturedPiecesWidget capturedPieces={topCapturedPieces} color={isWhiteView ? "w" : "b"} name={topPlayer} />
-
-			<div className=" max-size-full size-[min(92vw,71vh)] aspect-square flex flex-col">
+			<div className="flex flex-col h-full overflow-hidden rounded-sm">
 				{
 					boardAligned.map((row, rowIndex) => (
 						<div key={rowIndex} className="flex-1 flex">
@@ -219,17 +202,6 @@ const BoardWidget = ({ gameState, gameId }: { gameState: GameState, gameId: stri
 					))
 				}
 			</div>
-
-			{/* White Player */}
-			<CapturedPiecesWidget capturedPieces={bottomCapturedPieces} color={isWhiteView ? "b" : "w"} name={bottomPlayer} />
-
-			<button
-				// onClick={() => setIsWhiteView(prev => !prev)}
-				className="bg-gray-600 text-white px-3 py-2 rounded"
-			>
-				Flip
-			</button>
-		</div>
 	)
 }
 export default BoardWidget
