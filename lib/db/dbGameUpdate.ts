@@ -49,12 +49,21 @@ export const updateGameOver = async (gameId: string, result: "draw" | "checkmate
 export const updateGameResignation = async (
 	gameId: string,
 	resignedBy: Color,
-	winner: Color
+	winner: Color,
+	chess: Chess
 ) => {
+	const resultString = winner === "w" ? "1-0" : "0-1";
+
+	const pgn = chess
+		.pgn()
+		.replace('[Result "*"]', `[Result "${resultString}"]`)
+		.replace(/\*$/, resultString);
+
 	try {
 		await db
 			.update(gamesTable)
 			.set({
+				pgn,
 				result: "resignation",
 				resignedBy,
 				winner,

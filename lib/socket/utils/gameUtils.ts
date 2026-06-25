@@ -1,4 +1,4 @@
-import { Chess, Move } from "chess.js";
+import { Chess, Move, PieceSymbol } from "chess.js";
 import { chessGames, DbGameState, games, GameState, LastMove } from "../stores/games";
 import { Challenge } from "@/store/challengeStore";
 import { db } from "@/db";
@@ -13,6 +13,33 @@ const pieceValues = {
 	q: 9,
 	k: 0,
 } as const;
+
+const calculateMaterial = (chess: Chess) => {
+	let whiteMaterial = 0;
+	let blackMaterial = 0;
+
+	for (const row of chess.board()) {
+		for (const piece of row) {
+			if (!piece) continue;
+
+			const value = pieceValues[piece.type];
+
+			if (piece.color === "w") {
+				whiteMaterial += value;
+			} else {
+				blackMaterial += value;
+			}
+		}
+	}
+
+	const material = {
+		white: whiteMaterial,
+		black: blackMaterial,
+		advantage: whiteMaterial - blackMaterial,
+	};
+
+	return material;
+}
 
 export const updateGameState = (game: GameState, chess: Chess, move?: Move | null) => {
 	game.fen = chess.fen();
@@ -43,28 +70,7 @@ export const updateGameState = (game: GameState, chess: Chess, move?: Move | nul
 			}
 		}
 
-		let whiteMaterial = 0;
-		let blackMaterial = 0;
-
-		for (const row of chess.board()) {
-			for (const piece of row) {
-				if (!piece) continue;
-
-				const value = pieceValues[piece.type];
-
-				if (piece.color === "w") {
-					whiteMaterial += value;
-				} else {
-					blackMaterial += value;
-				}
-			}
-		}
-
-		game.material = {
-			white: whiteMaterial,
-			black: blackMaterial,
-			advantage: whiteMaterial - blackMaterial,
-		};
+		game.material = calculateMaterial(chess);
 	}
 
 	game.history = chess.history();
@@ -75,7 +81,9 @@ export const updateGameState = (game: GameState, chess: Chess, move?: Move | nul
 		isCheck: chess.isCheck(),
 		isCheckMate: chess.isCheckmate(),
 		isDraw: chess.isDraw(),
-		isGameOver: game.status.isGameOver,
+		isGameOver: game.result !== ""
+			? true
+			: chess.isGameOver(),
 		isStalemate: chess.isStalemate(),
 		isThreefoldRepetition:
 			chess.isThreefoldRepetition(),
@@ -144,19 +152,53 @@ export const initializeGame = (gameId: string, chess: Chess, challenge: Challeng
 	return game;
 }
 
-const convertGameToGameState = (
+export const convertGameToGameState = (
 	game: DbGameState,
 	chess: Chess
 ): GameState => {
-	const lastMove =
+	const history =
 		chess.history({
 			verbose: true
-		}).at(-1) as LastMove;
+		})
+
+	const last = history.at(-1);
+
+	const lastMove: LastMove | null = last
+		? {
+			from: last.from,
+			to: last.to,
+			piece: last.piece,
+			color: last.color,
+			captured: last.captured,
+			san: last.san,
+		}
+		: null;
+
+	const whitesCapturedPieces: PieceSymbol[] = [];
+	const blacksCapturedPieces: PieceSymbol[] = [];
+
+	for (const move of history) {
+		if (move.captured) {
+			if (move.color === "w") {
+				whitesCapturedPieces.push(move.captured);
+			} else {
+				blacksCapturedPieces.push(move.captured);
+			}
+		}
+
+		if (move.promotion) {
+			if (move.color === "w") {
+				blacksCapturedPieces.push("p");
+			} else {
+				whitesCapturedPieces.push("p");
+			}
+		}
+	}
 
 	const gameState: GameState = {
 		gameId: game.id,
 
-		fen: game.fen,
+		fen: "",
 
 		lastMove: lastMove,
 
@@ -174,14 +216,10 @@ const convertGameToGameState = (
 			isInsufficientMaterial: false,
 		},
 
-		material: {
-			white: 0,
-			black: 0,
-			advantage: 0,
-		},
+		material: calculateMaterial(chess),
 
-		whitesCapturedPieces: [],
-		blacksCapturedPieces: [],
+		whitesCapturedPieces: whitesCapturedPieces,
+		blacksCapturedPieces: blacksCapturedPieces,
 
 		whitePlayerId: game.whitePlayerId,
 		whitePlayerUsername: game.whitePlayerUsername,

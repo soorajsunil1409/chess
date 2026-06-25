@@ -2,11 +2,12 @@
 
 import { DbGameState } from "@/lib/socket/stores/games"
 import { Chess } from "chess.js";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react"
 
 const GamesPage = () => {
+	const router = useRouter();
 	const [userGames, setUserGames] = useState<DbGameState[]>([]);
-	const [chess, setChess] = useState<Chess>(new Chess());
 
 	useEffect(() => {
 		const getGames = async () => {
@@ -90,6 +91,7 @@ const GamesPage = () => {
 									return (
 										<tr
 											key={game.id}
+											onClick={() => router.push(`/review/${game.id}`)}
 											className={`border-b border-[#2f2f2f] cursor-pointer transition hover:bg-[#303030]
 											${index % 2 === 0
 													? "bg-[#222]"

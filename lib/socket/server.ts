@@ -207,6 +207,13 @@ io.on("connection", (socket) => {
 			return;
 		}
 
+		const chess = chessGames.get(gameId);
+
+		if (!chess) {
+			socket.emit("game:error", "Game error");
+			return;
+		}
+
 		const resignedColor =
 			game.whitePlayerId === userId
 				? "w"
@@ -227,7 +234,7 @@ io.on("connection", (socket) => {
 
 		io.to(gameId).emit("game:update", game);
 
-		const { success, error } = await updateGameResignation(gameId, resignedColor, winner);
+		const { success, error } = await updateGameResignation(gameId, resignedColor, winner, chess);
 
 		if (!success) {
 			socket.emit(

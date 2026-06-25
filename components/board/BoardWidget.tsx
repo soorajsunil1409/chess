@@ -1,20 +1,43 @@
-import { Chess, Move, Square } from "chess.js";
+import { Chess, Color, Move, PieceSymbol, Square } from "chess.js";
 import { useEffect, useMemo, useRef, useState } from "react";
-import PieceWidget from "../PieceWidget";
-import { CHECK_HIGHLIGHT_COLOR, DARK_CELL, LEGAL_HIGHLIGHT, LIGHT_CELL, SELECTED_DARK_CELL, SELECTED_LIGHT_CELL } from "@/lib/constants";
 import { GameState } from "@/lib/socket/stores/games";
 import { socket } from "@/lib/socket";
+import CapturedPiecesWidget from "../CapturedPiecesWidget";
+import { BoardRow } from "./BoardRow";
+import BoardPlayspace from "./BoardPlayspace";
 
-const BoardWidget = ({ gameState, gameId, isWhiteView }: { gameState: GameState, gameId: string, isWhiteView: boolean }) => {
+const BoardWidget = ({
+	gameState,
+	gameId,
+	isWhiteView,
+	topPlayer,
+	bottomPlayer,
+	topPlayerCapturedPieces,
+	bottomPlayerCapturedPieces,
+	topPlayerColor,
+	bottomPlayerColor,
+	topPlayerMaterialUpBy,
+	bottomPlayerMaterialUpBy
+}: {
+	gameState: GameState,
+	gameId: string,
+	isWhiteView: boolean,
+	topPlayer: string,
+	bottomPlayer: string,
+	topPlayerCapturedPieces: PieceSymbol[],
+	bottomPlayerCapturedPieces: PieceSymbol[],
+	topPlayerColor: Color,
+	bottomPlayerColor: Color,
+	topPlayerMaterialUpBy: number,
+	bottomPlayerMaterialUpBy: number
+}) => {
 	const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const chessRef = useRef(new Chess());
 	const [board, setBoard] = useState(chessRef.current.board());
 
-	const lastMove = gameState.lastMove;
 	const turn = gameState.turn;
-	const status = gameState.status;
 
 	useEffect(() => {
 		chessRef.current.load(gameState.fen);
@@ -29,15 +52,6 @@ const BoardWidget = ({ gameState, gameId, isWhiteView }: { gameState: GameState,
 	const boardAligned = !isWhiteView
 		? board.map(row => row.toReversed()).reverse()
 		: board;
-
-	const rowLabels = isWhiteView
-		? [8, 7, 6, 5, 4, 3, 2, 1]
-		: [1, 2, 3, 4, 5, 6, 7, 8];
-
-	const colLabels = isWhiteView
-		? ["a", "b", "c", "d", "e", "f", "g", "h"]
-		: ["h", "g", "f", "e", "d", "c", "b", "a"];
-
 
 	const selectedLegalMoves: Move[] = useMemo(() => {
 		if (!selectedSquare) return [];
@@ -92,116 +106,32 @@ const BoardWidget = ({ gameState, gameId, isWhiteView }: { gameState: GameState,
 	}
 
 	return (
-			<div className="flex flex-col h-full overflow-hidden rounded-sm">
-				{
-					boardAligned.map((row, rowIndex) => (
-						<div key={rowIndex} className="flex-1 flex">
-							{
-								row.map((cell, colIndex) => {
-									const isDark = (rowIndex + colIndex) % 2 === 1;
+		<div className="rounded flex flex-col gap-2 w-full h-full">
+			<CapturedPiecesWidget
+				capturedPieces={topPlayerCapturedPieces}
+				color={bottomPlayerColor}
+				name={topPlayer}
+				material={topPlayerMaterialUpBy !== 0 ? topPlayerMaterialUpBy : ""}
+			/>
 
-									const cellColor = isDark
-										? DARK_CELL
-										: LIGHT_CELL;
-
-									const cellColorOpp = isDark
-										? LIGHT_CELL
-										: DARK_CELL;
-
-									const highlightColor = isDark
-										? SELECTED_DARK_CELL
-										: SELECTED_LIGHT_CELL;
-
-									const square =
-										`${colLabels[colIndex]}${rowLabels[rowIndex]}` as Square;
-
-									let squareColor = square === selectedSquare || (lastMove?.to == square || lastMove?.from == square)
-										? highlightColor
-										: cellColor
-
-									if (cell?.type === "k" && cell.color === turn && status?.isCheck) squareColor = CHECK_HIGHLIGHT_COLOR;
-
-									return (
-										<div
-											key={square}
-											className={`relative select-none flex-1 flex items-center justify-center ${(cell || selectedLegalSquares.includes(square))
-												? "cursor-grab"
-												: ""
-												}`}
-											style={{
-												backgroundColor: squareColor
-											}}
-											onClick={() => handlePieceClick(square)}
-										>
-											{/* Rank labels */}
-											{
-												colIndex === 0 &&
-												<span
-													className="absolute top-0 left-1 font-bold text-[8px] md:text-xs"
-													style={{
-														color: cellColorOpp
-													}}
-												>
-													{rowLabels[rowIndex]}
-												</span>
-											}
-
-											{/* File labels */}
-											{
-												rowIndex === 7 &&
-												<span
-													className="absolute bottom-0 right-1 font-bold text-[8px] md:text-xs"
-													style={{
-														color: cellColorOpp
-													}}
-												>
-													{colLabels[colIndex]}
-												</span>
-											}
-
-											{/* Legal move indicators */}
-											<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-												{
-													selectedLegalSquares.includes(square) &&
-													!selectedCapturableSquares.includes(square) &&
-													(
-														<span
-															className="w-1/3 h-1/3 rounded-full"
-															style={{
-																backgroundColor: LEGAL_HIGHLIGHT
-															}}
-														/>
-													)
-												}
-
-												{
-													selectedCapturableSquares.includes(square) &&
-													(
-														<span
-															className="absolute inset-0 rounded-full border-[6px]"
-															style={{
-																borderColor: LEGAL_HIGHLIGHT
-															}}
-														/>
-													)
-												}
-											</div>
-
-											{
-												cell &&
-												<PieceWidget
-													type={cell.type}
-													color={cell.color}
-												/>
-											}
-										</div>
-									);
-								})
-							}
-						</div>
-					))
-				}
-			</div>
+			<BoardPlayspace
+				gameState={gameState}
+				boardAligned={boardAligned}
+				isWhiteView={isWhiteView}
+				selectedSquare={selectedSquare}
+				turn={turn}
+				selectedLegalSquares={selectedLegalSquares}
+				selectedCapturableSquares={selectedCapturableSquares}
+				handlePieceClick={handlePieceClick}
+			/>
+			
+			<CapturedPiecesWidget
+				capturedPieces={bottomPlayerCapturedPieces}
+				color={topPlayerColor}
+				name={bottomPlayer}
+				material={bottomPlayerMaterialUpBy !== 0 ? bottomPlayerMaterialUpBy : ""}
+			/>
+		</div>
 	)
 }
 export default BoardWidget
