@@ -1,6 +1,10 @@
 import { Chess, Move } from "chess.js";
-import { GameState } from "../stores/games";
+import { chessGames, games, GameState } from "../stores/games";
 import { Challenge } from "@/store/challengeStore";
+import { db } from "@/db";
+import { gamesTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { Socket } from "socket.io";
 
 const pieceValues = {
 	p: 1,
@@ -11,7 +15,7 @@ const pieceValues = {
 	k: 0,
 } as const;
 
-export const updateGameState = (game: GameState, chess: Chess, move: Move | null) => {
+export const updateGameState = (game: GameState, chess: Chess, move?: Move | null) => {
 	game.fen = chess.fen();
 
 	if (move) {
@@ -25,8 +29,6 @@ export const updateGameState = (game: GameState, chess: Chess, move: Move | null
 		};
 
 		if (move.isCapture() && move.captured) {
-			console.log(move);
-
 			if (move.color === "w") {
 				game.whitesCapturedPieces.push(move.captured);
 			} else {
@@ -104,7 +106,7 @@ export const updateGameState = (game: GameState, chess: Chess, move: Move | null
 
 		game.status.isGameOver = chess.isGameOver();
 	}
-
+	
 	return game;
 }
 
@@ -141,4 +143,93 @@ export const initializeGame = (gameId: string, chess: Chess, challenge: Challeng
 	}
 
 	return game;
+}
+
+const convertGameToGameState = (
+	game: {
+		id: string;
+		whitePlayerId: string;
+		blackPlayerId: string;
+		whitePlayerUsername: string;
+		blackPlayerUsername: string;
+		fen: string;
+		pgn: string;
+		status: "active" | "finished";
+		winner: "w" | "b" | "draw" | null;
+		resignedBy: "w" | "b" | null;
+		result:
+		| "draw"
+		| "checkmate"
+		| "stalemate"
+		| "resignation"
+		| null;
+		startedAt: Date;
+		endedAt: Date | null;
+	},
+	chess: Chess
+): GameState => {
+	const gameState: GameState = {
+		gameId: game.id,
+
+		fen: game.fen,
+
+		lastMove: null,
+
+		history: [],
+
+		turn: chess.turn(),
+
+		status: {
+			isCheck: false,
+			isCheckMate: false,
+			isDraw: false,
+			isGameOver: false,
+			isStalemate: false,
+			isThreefoldRepetition: false,
+			isInsufficientMaterial: false,
+		},
+
+		material: {
+			white: 0,
+			black: 0,
+			advantage: 0,
+		},
+
+		whitesCapturedPieces: [],
+		blacksCapturedPieces: [],
+
+		whitePlayerId: game.whitePlayerId,
+		whitePlayerUsername: game.whitePlayerUsername,
+
+		blackPlayerId: game.blackPlayerId,
+		blackPlayerUsername: game.blackPlayerUsername,
+
+		winner: (game.winner ?? "") as GameState["winner"],
+		resignedBy: (game.resignedBy ?? "") as GameState["resignedBy"],
+		result: (game.result ?? "") as GameState["result"],
+	};
+
+	return updateGameState(
+		gameState,
+		chess,
+		null
+	);
+};
+
+export const initializeGames = async () => {
+	const activeGames = await db
+		.select()
+		.from(gamesTable)
+		.where(eq(gamesTable.status, "active"));
+
+	for (const game of activeGames) {
+		const chess = new Chess();
+
+		if (game.pgn) {
+			chess.loadPgn(game.pgn);
+		}
+
+		games.set(game.id, convertGameToGameState(game, chess));
+		chessGames.set(game.id, chess);
+	}
 }

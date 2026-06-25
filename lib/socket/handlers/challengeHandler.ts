@@ -5,6 +5,8 @@ import { challenges } from "../stores/challenges";
 import { chessGames, games } from "../stores/games";
 import { Chess } from "chess.js";
 import { initializeGame } from "../utils/gameUtils";
+import { db } from "@/db";
+import {gamesTable} from "@/db/schema";
 
 
 export const registerChallengeHandlers = (
@@ -20,10 +22,10 @@ export const registerChallengeHandlers = (
 
 		const existingChallenge = challenges.values().find(
 			(challenge) =>
-				(challenge.fromUserId === challenger.userId &&
+			(challenge.fromUserId === challenger.userId &&
 				challenge.toUserId === target.userId)
 		)
-		
+
 		if (existingChallenge) {
 			io.to(challenger.socketId).emit("challenge:error", "Challenge already sent");
 			return;
@@ -52,7 +54,7 @@ export const registerChallengeHandlers = (
 		);
 	});
 
-	socket.on("challenge:accept", (challengeId: string) => {
+	socket.on("challenge:accept", async (challengeId: string) => {
 		const challenge =
 			challenges.get(
 				challengeId
@@ -99,7 +101,40 @@ export const registerChallengeHandlers = (
 			newChess
 		);
 
-		games.set(gameId, initializeGame(gameId, newChess, challenge));
+		const game = initializeGame(gameId, newChess, challenge)
+
+		games.set(gameId, game);
+
+		try {
+			await db.insert(gamesTable).values({
+			id: gameId,
+
+			whitePlayerId: game.whitePlayerId,
+			blackPlayerId: game.blackPlayerId,
+
+			whitePlayerUsername:
+				game.whitePlayerUsername,
+
+			blackPlayerUsername:
+				game.blackPlayerUsername,
+
+			fen: newChess.fen(),
+			pgn: newChess.pgn(),
+
+			status: "active",
+		});
+		}
+		catch (error) {
+			console.error(error);
+
+			socket.emit(
+				"game:error",
+				"Failed to create game"
+			);
+
+			games.delete(gameId);
+			chessGames.delete(gameId);
+		}
 
 		io.to(
 			challenger.socketId

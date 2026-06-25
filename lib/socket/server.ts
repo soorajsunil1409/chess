@@ -1,11 +1,16 @@
-import { Challenge } from "@/store/challengeStore";
+import dotenv from "dotenv";
+dotenv.config({
+	path: ".env.local",
+});
+
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { registerChallengeHandlers } from "./handlers/challengeHandler";
 import { onlineUsers } from "./stores/onlineUsers";
-import { challenges } from "./stores/challenges";
 import { chessGames, games } from "./stores/games";
-import { updateGameState } from "./utils/gameUtils";
+import { initializeGames, updateGameState } from "./utils/gameUtils";
+import { emitChallengesForUser } from "./utils/emitChanges";
+import { updateGameMove } from "../db/dbGameUpdate";
 
 const httpServer = createServer();
 
@@ -17,26 +22,7 @@ const io = new Server(httpServer, {
 	}
 });
 
-const emitChallengesForUser = (
-	userId: string
-) => {
-	const user =
-		onlineUsers.get(userId);
-
-	if (!user) return;
-
-	const userChallenges =
-		[...challenges.values()].filter(
-			(challenge) =>
-				challenge.toUserId ===
-				userId
-		);
-
-	io.to(user.socketId).emit(
-		"challenges:update",
-		userChallenges
-	);
-};
+initializeGames()
 
 io.on("connection", (socket) => {
 	const { userId, username } = socket.handshake.auth;
@@ -54,7 +40,7 @@ io.on("connection", (socket) => {
 
 	io.emit("players:online", [...onlineUsers.values()]);
 
-	emitChallengesForUser(userId);
+	emitChallengesForUser(io, userId);
 
 	registerChallengeHandlers(
 		io,
@@ -103,7 +89,7 @@ io.on("connection", (socket) => {
 
 	socket.on(
 		"game:move",
-		({
+		async ({
 			gameId,
 			from,
 			to,
@@ -114,9 +100,16 @@ io.on("connection", (socket) => {
 
 			if (!game) return;
 
+			if (game.result !== "") {
+				socket.emit(
+					"game:error",
+					"Game has ended"
+				);
+				return;
+			}
+
 			const chess =
 				chessGames.get(gameId);
-
 
 			if (!chess) return;
 
@@ -125,6 +118,19 @@ io.on("connection", (socket) => {
 				game.blackPlayerId === userId;
 
 			if (!isPlayer) return;
+
+			const playerColor =
+				game.whitePlayerId === userId
+					? "w"
+					: "b";
+
+			if (playerColor !== chess.turn()) {
+				socket.emit(
+					"game:error",
+					"Not your turn"
+				);
+				return;
+			}
 
 			try {
 				const move =
@@ -143,6 +149,16 @@ io.on("connection", (socket) => {
 				}
 
 				game = updateGameState(game, chess, move);
+				const { success, error } = await updateGameMove(game, chess, socket);
+
+				if (!success) {
+					socket.emit(
+						"game:error",
+						error
+					);
+
+					return;
+				}
 
 				io.to(gameId).emit("game:update", game);
 			} catch {
@@ -195,7 +211,7 @@ io.on("connection", (socket) => {
 			resignedColor === "w"
 				? "b"
 				: "w";
-		
+
 		game.resignedBy = resignedColor;
 
 		game.result = "resignation";
