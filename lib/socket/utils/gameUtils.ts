@@ -74,13 +74,36 @@ export const updateGameState = (game: GameState, chess: Chess, move: Move | null
 		isCheck: chess.isCheck(),
 		isCheckMate: chess.isCheckmate(),
 		isDraw: chess.isDraw(),
-		isGameOver: chess.isGameOver(),
+		isGameOver: game.status.isGameOver,
 		isStalemate: chess.isStalemate(),
 		isThreefoldRepetition:
 			chess.isThreefoldRepetition(),
 		isInsufficientMaterial:
 			chess.isInsufficientMaterial(),
 	};
+
+	if (game.result === "") {
+		if (chess.isCheckmate()) {
+			game.result = "checkmate";
+
+			game.winner = chess.turn() === "w"
+				? "b"
+				: "w";
+		} else if (
+			chess.isStalemate() ||
+			chess.isDraw() ||
+			chess.isThreefoldRepetition() ||
+			chess.isInsufficientMaterial()
+		) {
+			game.result = chess.isStalemate()
+				? "stalemate"
+				: "draw";
+
+			game.winner = "draw";
+		}
+
+		game.status.isGameOver = chess.isGameOver();
+	}
 
 	return game;
 }
@@ -95,7 +118,15 @@ export const initializeGame = (gameId: string, chess: Chess, challenge: Challeng
 		whitePlayerUsername: challenge.fromUsername,
 		blackPlayerId: challenge.toUserId,
 		blackPlayerUsername: challenge.toUsername,
-		status: null,
+		status: {
+			isCheck: false,
+			isCheckMate: false,
+			isDraw: false,
+			isGameOver: false,
+			isStalemate: false,
+			isThreefoldRepetition: false,
+			isInsufficientMaterial: false,
+		},
 		lastMove: null,
 		whitesCapturedPieces: [],
 		blacksCapturedPieces: [],
@@ -103,7 +134,10 @@ export const initializeGame = (gameId: string, chess: Chess, challenge: Challeng
 			white: 0,
 			black: 0,
 			advantage: 0
-		}
+		},
+		winner: "",
+		resignedBy: "",
+		result: ""
 	}
 
 	return game;

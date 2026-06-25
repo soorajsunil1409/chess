@@ -28,7 +28,7 @@ export type GameState = {
 		isStalemate: boolean;
 		isThreefoldRepetition: boolean;
 		isInsufficientMaterial: boolean;
-	} | null;
+	};
 
 	material: {
 		white: number;
@@ -43,6 +43,10 @@ export type GameState = {
 	whitePlayerUsername: string;
 	blackPlayerId: string;
 	blackPlayerUsername: string;
+
+	winner: Color | "draw" | "";
+	resignedBy: Color | "";
+	result: "checkmate" | "stalemate" | "draw" | "resignation" | "";
 };
 
 export const games = new Map<string, GameState>();

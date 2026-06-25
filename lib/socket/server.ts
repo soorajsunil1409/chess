@@ -154,6 +154,57 @@ io.on("connection", (socket) => {
 		}
 	);
 
+	socket.on("game:resign", (gameId: string) => {
+		let game = games.get(gameId);
+
+		if (!game) {
+			socket.emit("game:error", "Game does not exist");
+			return;
+		}
+
+		if (
+			game.whitePlayerId !== userId &&
+			game.blackPlayerId !== userId
+		) {
+			socket.emit(
+				"game:error",
+				"You are not part of this game"
+			);
+			return;
+		}
+
+		if (game.result !== "") {
+			socket.emit(
+				"game:error",
+				"Game has already ended"
+			);
+			return;
+		}
+
+		if (!game.status) {
+			socket.emit("game:error", "Game error");
+			return;
+		}
+
+		const resignedColor =
+			game.whitePlayerId === userId
+				? "w"
+				: "b";
+
+		game.winner =
+			resignedColor === "w"
+				? "b"
+				: "w";
+		
+		game.resignedBy = resignedColor;
+
+		game.result = "resignation";
+
+		game.status.isGameOver = true;
+
+		io.to(gameId).emit("game:update", game);
+	});
+
 	socket.on("disconnect", (reason) => {
 		const user = onlineUsers.get(userId);
 
