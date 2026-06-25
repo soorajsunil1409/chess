@@ -31,7 +31,7 @@ export default function RootLayout({
 			lang="en"
 			className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
 		>
-			<body className="w-full h-full flex flex-col">
+			<body className="w-full h-full flex flex-col bg-[#333]">
 				<Providers>
 					<SocketProvider />
 					<Navbar />

@@ -9,6 +9,27 @@ export type LastMove = {
 	san?: string,
 }
 
+export type DbGameState = {
+	id: string;
+	whitePlayerId: string;
+	blackPlayerId: string;
+	whitePlayerUsername: string;
+	blackPlayerUsername: string;
+	fen: string;
+	pgn: string;
+	status: "active" | "finished";
+	winner: "w" | "b" | "draw" | null;
+	resignedBy: "w" | "b" | null;
+	result:
+	| "draw"
+	| "checkmate"
+	| "stalemate"
+	| "resignation"
+	| null;
+	startedAt: Date;
+	endedAt: Date | null;
+}
+
 export type GameState = {
 	gameId: string;
 

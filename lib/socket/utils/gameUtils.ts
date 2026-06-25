@@ -1,5 +1,5 @@
 import { Chess, Move } from "chess.js";
-import { chessGames, games, GameState, LastMove } from "../stores/games";
+import { chessGames, DbGameState, games, GameState, LastMove } from "../stores/games";
 import { Challenge } from "@/store/challengeStore";
 import { db } from "@/db";
 import { gamesTable } from "@/db/schema";
@@ -145,26 +145,7 @@ export const initializeGame = (gameId: string, chess: Chess, challenge: Challeng
 }
 
 const convertGameToGameState = (
-	game: {
-		id: string;
-		whitePlayerId: string;
-		blackPlayerId: string;
-		whitePlayerUsername: string;
-		blackPlayerUsername: string;
-		fen: string;
-		pgn: string;
-		status: "active" | "finished";
-		winner: "w" | "b" | "draw" | null;
-		resignedBy: "w" | "b" | null;
-		result:
-		| "draw"
-		| "checkmate"
-		| "stalemate"
-		| "resignation"
-		| null;
-		startedAt: Date;
-		endedAt: Date | null;
-	},
+	game: DbGameState,
 	chess: Chess
 ): GameState => {
 	const lastMove =

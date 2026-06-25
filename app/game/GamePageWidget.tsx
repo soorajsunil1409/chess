@@ -169,7 +169,7 @@ const GamePageWidget = ({ gameId }: { gameId: string }) => {
 							gameState.status?.isGameOver &&
 							<div className="size-full absolute inset-0 flex items-center justify-center">
 								<div
-									className="w-[400px] rounded-lg overflow-hidden bg-[#3a3a3a] shadow-[0_2.8px_2.2px_rgba(0,0,0,0.034),0_6.7px_5.3px_rgba(0,0,0,0.048),0_12.5px_10px_rgba(0,0,0,0.06),0_22.3px_17.9px_rgba(0,0,0,0.072),0_41.8px_33.4px_rgba(0,0,0,0.086),0_100px_80px_rgba(0,0,0,0.12)]"
+									className="w-100 rounded-lg overflow-hidden bg-[#3a3a3a] shadow-[0_2.8px_2.2px_rgba(0,0,0,0.034),0_6.7px_5.3px_rgba(0,0,0,0.048),0_12.5px_10px_rgba(0,0,0,0.06),0_22.3px_17.9px_rgba(0,0,0,0.072),0_41.8px_33.4px_rgba(0,0,0,0.086),0_100px_80px_rgba(0,0,0,0.12)]"
 								>
 									<div className="w-full text-center flex flex-col p-3 text-white">
 										<div className="text-2xl font-bold">

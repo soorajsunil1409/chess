@@ -1,7 +1,6 @@
 "use server";
 
 import { loginSchema, registerSchema } from "@/lib/validations/auth";
-import { signIn } from "@/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq, or } from "drizzle-orm";
