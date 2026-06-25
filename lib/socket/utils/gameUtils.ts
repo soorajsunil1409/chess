@@ -1,10 +1,9 @@
 import { Chess, Move } from "chess.js";
-import { chessGames, games, GameState } from "../stores/games";
+import { chessGames, games, GameState, LastMove } from "../stores/games";
 import { Challenge } from "@/store/challengeStore";
 import { db } from "@/db";
 import { gamesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { Socket } from "socket.io";
 
 const pieceValues = {
 	p: 1,
@@ -106,7 +105,7 @@ export const updateGameState = (game: GameState, chess: Chess, move?: Move | nul
 
 		game.status.isGameOver = chess.isGameOver();
 	}
-	
+
 	return game;
 }
 
@@ -168,12 +167,17 @@ const convertGameToGameState = (
 	},
 	chess: Chess
 ): GameState => {
+	const lastMove =
+		chess.history({
+			verbose: true
+		}).at(-1) as LastMove;
+
 	const gameState: GameState = {
 		gameId: game.id,
 
 		fen: game.fen,
 
-		lastMove: null,
+		lastMove: lastMove,
 
 		history: [],
 

@@ -10,7 +10,7 @@ import { onlineUsers } from "./stores/onlineUsers";
 import { chessGames, games } from "./stores/games";
 import { initializeGames, updateGameState } from "./utils/gameUtils";
 import { emitChallengesForUser } from "./utils/emitChanges";
-import { updateGameMove } from "../db/dbGameUpdate";
+import { updateGameMove, updateGameOver, updateGameResignation } from "../db/dbGameUpdate";
 
 const httpServer = createServer();
 
@@ -48,7 +48,7 @@ io.on("connection", (socket) => {
 		userId
 	)
 
-	socket.on("game:join", (gameId: string) => {
+	socket.on("game:join", async (gameId: string) => {
 		let game = games.get(gameId);
 
 		if (!game) {
@@ -149,6 +149,13 @@ io.on("connection", (socket) => {
 				}
 
 				game = updateGameState(game, chess, move);
+
+				io.to(gameId).emit("game:update", game);
+
+				if (chess.isGameOver() && game.winner && game.result) {
+					await updateGameOver(game.gameId, game.result, game.winner, socket);
+				}
+
 				const { success, error } = await updateGameMove(game, chess, socket);
 
 				if (!success) {
@@ -159,8 +166,6 @@ io.on("connection", (socket) => {
 
 					return;
 				}
-
-				io.to(gameId).emit("game:update", game);
 			} catch {
 				socket.emit(
 					"game:error",
@@ -170,7 +175,7 @@ io.on("connection", (socket) => {
 		}
 	);
 
-	socket.on("game:resign", (gameId: string) => {
+	socket.on("game:resign", async (gameId: string) => {
 		let game = games.get(gameId);
 
 		if (!game) {
@@ -207,10 +212,12 @@ io.on("connection", (socket) => {
 				? "w"
 				: "b";
 
-		game.winner =
+		const winner =
 			resignedColor === "w"
 				? "b"
 				: "w";
+
+		game.winner = winner;
 
 		game.resignedBy = resignedColor;
 
@@ -219,6 +226,17 @@ io.on("connection", (socket) => {
 		game.status.isGameOver = true;
 
 		io.to(gameId).emit("game:update", game);
+
+		const { success, error } = await updateGameResignation(gameId, resignedColor, winner);
+
+		if (!success) {
+			socket.emit(
+				"game:error",
+				error
+			);
+
+			return;
+		}
 	});
 
 	socket.on("disconnect", (reason) => {

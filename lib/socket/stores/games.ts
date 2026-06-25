@@ -6,7 +6,7 @@ export type LastMove = {
 	piece: PieceSymbol,
 	color: Color,
 	captured: PieceSymbol | undefined,
-	san: string,
+	san?: string,
 }
 
 export type GameState = {
