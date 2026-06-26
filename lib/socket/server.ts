@@ -8,9 +8,10 @@ import { Server } from "socket.io";
 import { registerChallengeHandlers } from "./handlers/challengeHandler";
 import { onlineUsers } from "./stores/onlineUsers";
 import { chessGames, games } from "./stores/games";
-import { initializeGames, updateGameState } from "./utils/gameUtils";
+import { initializeGames } from "./utils/gameUtils";
 import { emitChallengesForUser } from "./utils/emitChanges";
 import { updateGameMove, updateGameOver, updateGameResignation } from "../db/dbGameUpdate";
+import { updateGameState } from "../chess";
 
 const httpServer = createServer();
 

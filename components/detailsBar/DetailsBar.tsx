@@ -7,11 +7,15 @@ import GameActions from "./GameActions";
 type DetailsSidebarProps = {
 	turn: string;
 	gameState: GameState;
+	isReview?: boolean;
+	handleMoveClick?: (moveIdx: number) => void;
 };
 
 const DetailsSidebar = ({
 	turn,
 	gameState,
+	isReview,
+	handleMoveClick
 }: DetailsSidebarProps) => {
 	const formattedHistory = useMemo(() => {
 		const history = []
@@ -43,18 +47,21 @@ const DetailsSidebar = ({
 			<Separator />
 
 			<div className="overflow-auto rounded-md">
-				<MovesTable formattedHistory={formattedHistory} />
+				<MovesTable formattedHistory={formattedHistory} handleMoveClick={handleMoveClick} />
 			</div>
 
 			<Separator />
 
 			<div className="flex-1" />
 
-			<div className="p-3">
-				<GameActions
-					gameState={gameState}
-				/>
-			</div>
+			{
+				!isReview &&
+				<div className="p-3">
+					<GameActions
+						gameState={gameState}
+					/>
+				</div>
+			}
 		</div>
 	);
 };

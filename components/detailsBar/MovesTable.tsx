@@ -4,11 +4,18 @@ type MovesTableProps = {
 		white: string;
 		black: string;
 	}[];
+	handleMoveClick?: (moveIdx: number) => void;
 };
 
 const MovesTable = ({
 	formattedHistory,
+	handleMoveClick
 }: MovesTableProps) => {
+	const handleClick = (moveIdx: number) => {
+		if (handleMoveClick !== undefined)
+			handleMoveClick(moveIdx);
+	}
+
 	return (
 		<table className="w-full text-sm text-zinc-300">
 			<thead>
@@ -33,11 +40,17 @@ const MovesTable = ({
 							{move.moveNumber}.
 						</td>
 
-						<td className="px-3 py-2 font-semibold">
+						<td
+							onClick={() => handleClick(2 * move.moveNumber - 1)}
+							className="px-3 py-2 font-semibold cursor-pointer hover:underline"
+						>
 							{move.white}
 						</td>
 
-						<td className="px-3 py-2 font-semibold">
+						<td
+							onClick={() => handleClick(2 * move.moveNumber)}
+							className="px-3 py-2 font-semibold cursor-pointer hover:underline"
+						>
 							{move.black}
 						</td>
 					</tr>

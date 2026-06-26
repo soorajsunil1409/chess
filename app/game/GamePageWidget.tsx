@@ -75,8 +75,6 @@ const GamePageWidget = ({ gameId }: { gameId: string }) => {
 		};
 	}, []);
 
-
-
 	if (!gameState) return <div>Loading...</div>
 
 	const isWhiteView = gameState.whitePlayerId === session?.user?.id;

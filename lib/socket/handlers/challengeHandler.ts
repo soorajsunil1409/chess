@@ -4,9 +4,9 @@ import { emitChallengesForUser } from "../utils/emitChanges";
 import { challenges } from "../stores/challenges";
 import { chessGames, games } from "../stores/games";
 import { Chess } from "chess.js";
-import { initializeGame } from "../utils/gameUtils";
 import { db } from "@/db";
 import {gamesTable} from "@/db/schema";
+import { initializeGame } from "@/lib/chess";
 
 
 export const registerChallengeHandlers = (

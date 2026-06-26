@@ -2,106 +2,21 @@
 
 import BoardPlayspace from "@/components/board/BoardPlayspace";
 import CapturedPiecesWidget from "@/components/CapturedPiecesWidget";
-import { DbGameState, GameState, LastMove } from "@/lib/socket/stores/games";
-import { Chess, PieceSymbol, Square } from "chess.js";
+import DetailsSidebar from "@/components/detailsBar/DetailsBar";
+import { convertGameToGameState, getDynamicGameState } from "@/lib/chess";
+import { GameState } from "@/lib/socket/stores/games";
+import { Chess, Move, PieceSymbol, Square } from "chess.js";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react"
-
-// TODO change this
-const convertGameToGameState = (
-	game: DbGameState,
-	chess: Chess
-): GameState => {
-	const history =
-		chess.history({
-			verbose: true
-		})
-
-	const last = history.at(-1);
-
-	const lastMove: LastMove | null = last
-		? {
-			from: last.from,
-			to: last.to,
-			piece: last.piece,
-			color: last.color,
-			captured: last.captured,
-			san: last.san,
-		}
-		: null;
-
-	const whitesCapturedPieces: PieceSymbol[] = [];
-	const blacksCapturedPieces: PieceSymbol[] = [];
-
-	for (const move of history) {
-		if (move.captured) {
-			if (move.color === "w") {
-				whitesCapturedPieces.push(move.captured);
-			} else {
-				blacksCapturedPieces.push(move.captured);
-			}
-		}
-
-		if (move.promotion) {
-			if (move.color === "w") {
-				blacksCapturedPieces.push("p");
-			} else {
-				whitesCapturedPieces.push("p");
-			}
-		}
-	}
-
-	const gameState: GameState = {
-		gameId: game.id,
-
-		fen: "",
-
-		lastMove: lastMove,
-
-		history: chess.history(),
-
-		turn: chess.turn(),
-
-		status: {
-			isCheck: chess.isCheck(),
-			isCheckMate: chess.isCheckmate(),
-			isDraw: chess.isDraw(),
-			isGameOver: false, // TODO check this later
-			isStalemate: chess.isStalemate(),
-			isThreefoldRepetition:
-				chess.isThreefoldRepetition(),
-			isInsufficientMaterial:
-				chess.isInsufficientMaterial(),
-		},
-
-		material: {
-			white: 0,
-			black: 0,
-			advantage: 0
-		},
-
-		whitesCapturedPieces: whitesCapturedPieces,
-		blacksCapturedPieces: blacksCapturedPieces,
-
-		whitePlayerId: game.whitePlayerId,
-		whitePlayerUsername: game.whitePlayerUsername,
-
-		blackPlayerId: game.blackPlayerId,
-		blackPlayerUsername: game.blackPlayerUsername,
-
-		winner: (game.winner ?? "") as GameState["winner"],
-		resignedBy: (game.resignedBy ?? "") as GameState["resignedBy"],
-		result: (game.result ?? "") as GameState["result"],
-	};
-
-	return gameState;
-};
-
+import { useEffect, useRef, useState } from "react"
 
 const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 	const { data: session } = useSession();
 	const [gameState, setGameState] = useState<GameState>();
-	const [chess, setChess] = useState<Chess>(new Chess());
+	const [gameHistory, setGameHistory] = useState<Move[]>([]);
+	const [boardChess, setBoardChess] = useState(() => new Chess());
+
+	const masterChessRef = useRef(new Chess());
+	const masterGameState = useRef<GameState | null>(null);
 
 	useEffect(() => {
 		const handleFetchGame = async () => {
@@ -109,38 +24,48 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 
 			const { game } = await res.json();
 
-			setGameState(convertGameToGameState(game, chess));
-			chess.loadPgn(game.pgn)
+			const masterChess = new Chess();
+			masterChess.loadPgn(game.pgn);
+			const gs = convertGameToGameState(game, masterChess);
+			masterChessRef.current = masterChess;
+			masterGameState.current = gs
+			
+			const chess = new Chess();
+			chess.loadPgn(game.pgn);
+			setBoardChess(chess);
+			setGameState(gs);
 
-			console.log(game);
+			setGameHistory(chess.history({ verbose: true }));
 		}
 
 		handleFetchGame();
-	}, [gameId])
+	}, [gameId]);
 
-	if (!gameState || !session) {
-		return <div>Loading...</div>
+	if (!masterGameState.current || !gameState || !session) {
+		return <div>Loading...</div>;
 	}
 
-	const isWhiteView = !session ? true : gameState.whitePlayerId === session.user?.id
+	const master = masterGameState.current;
+
+	const isWhiteView = !session ? true : master.whitePlayerId === session.user?.id
 	const topPlayerColor = isWhiteView ? "b" : "w";
 	const bottomPlayerColor = isWhiteView ? "w" : "b";
-	const topPlayer = isWhiteView ? gameState.blackPlayerUsername : gameState.whitePlayerUsername;
-	const bottomPlayer = isWhiteView ? gameState.whitePlayerUsername : gameState.blackPlayerUsername;
-	const topPlayerCapturedPieces: PieceSymbol[] = [];
-	const bottomPlayerCapturedPieces: PieceSymbol[] = [];
+	const topPlayer = isWhiteView ? master.blackPlayerUsername : master.whitePlayerUsername;
+	const bottomPlayer = isWhiteView ? master.whitePlayerUsername : master.blackPlayerUsername;
+	const topPlayerCapturedPieces: PieceSymbol[] = isWhiteView ? gameState.blacksCapturedPieces : gameState.whitesCapturedPieces;
+	const bottomPlayerCapturedPieces: PieceSymbol[] = isWhiteView ? gameState.whitesCapturedPieces : gameState.blacksCapturedPieces;
 
 	const topPlayerMaterialUpBy = 0;
 	const bottomPlayerMaterialUpBy = 0;
 
-	const board = chess.board();
+	const board = boardChess.board();
 	const boardAligned = !isWhiteView
 		? board.map(row => row.toReversed()).reverse()
 		: board;
 
 	const selectedSquare = null;
 
-	const turn = chess.turn();
+	const turn = gameState.turn === "w" ? "White" : "Black";
 
 	const selectedLegalSquares: Square[] = [];
 	const selectedCapturableSquares: Square[] = [];
@@ -149,35 +74,70 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 		return;
 	}
 
+	const handleMoveClick = (moveIdx: number) => {
+		const chess = new Chess();
+
+		for (let i = 0; i < moveIdx; i++) {
+			chess.move(gameHistory[i]);
+		}
+
+		setGameState((prev) => {
+			if (!prev) return prev;
+
+			return {
+				...prev,
+				...getDynamicGameState(chess)
+			}
+
+		})
+
+		setBoardChess(chess);
+	}
+
+	console.log(gameState);
 
 	return (
-		<div className="flex h-full w-full flex-col gap-2 items-center">
-			<div className="w-[min(76vh,95vw)] h-auto flex flex-col gap-2">
-				<CapturedPiecesWidget
-					capturedPieces={topPlayerCapturedPieces}
-					color={bottomPlayerColor}
-					name={topPlayer}
-					material={topPlayerMaterialUpBy !== 0 ? topPlayerMaterialUpBy : ""}
-				/>
-				<div className="size-full flex justify-center">
-					<BoardPlayspace
-						gameState={gameState}
-						boardAligned={boardAligned}
-						isWhiteView={isWhiteView}
-						selectedSquare={selectedSquare}
-						turn={turn}
-						selectedLegalSquares={selectedLegalSquares}
-						selectedCapturableSquares={selectedCapturableSquares}
-						handlePieceClick={handlePieceClick}
+		<div className="flex flex-col md:flex-row h-auto md:h-[90vh] gap-5 bg-[#333333] p-3">
+			<div className="flex-1 flex justify-center min-w-0">
+				<div className="flex flex-col gap-2 w-[min(76vh,95vw)]">
+					<CapturedPiecesWidget
+						capturedPieces={topPlayerCapturedPieces}
+						color={bottomPlayerColor}
+						name={topPlayer}
+						material={topPlayerMaterialUpBy !== 0 ? topPlayerMaterialUpBy : ""}
+					/>
+
+					<div className="flex justify-center">
+						<BoardPlayspace
+							gameState={gameState}
+							boardAligned={boardAligned}
+							isWhiteView={isWhiteView}
+							selectedSquare={selectedSquare}
+							turn={gameState.turn}
+							selectedLegalSquares={selectedLegalSquares}
+							selectedCapturableSquares={selectedCapturableSquares}
+							handlePieceClick={handlePieceClick}
+						/>
+					</div>
+
+					<CapturedPiecesWidget
+						capturedPieces={bottomPlayerCapturedPieces}
+						color={topPlayerColor}
+						name={bottomPlayer}
+						material={bottomPlayerMaterialUpBy !== 0 ? bottomPlayerMaterialUpBy : ""}
 					/>
 				</div>
-				<CapturedPiecesWidget
-					capturedPieces={bottomPlayerCapturedPieces}
-					color={topPlayerColor}
-					name={bottomPlayer}
-					material={bottomPlayerMaterialUpBy !== 0 ? bottomPlayerMaterialUpBy : ""}
+			</div>
+
+			<div className="w-full md:w-90 lg:w-110 md:min-w-90 shrink-0 md:h-full">
+				<DetailsSidebar
+					turn={turn}
+					gameState={masterGameState.current}
+					isReview={true}
+					handleMoveClick={handleMoveClick}
 				/>
 			</div>
+
 		</div>
 	)
 }
