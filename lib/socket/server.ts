@@ -235,6 +235,8 @@ io.on("connection", (socket) => {
 
 		io.to(gameId).emit("game:update", game);
 
+		console.log(game);
+
 		const { success, error } = await updateGameResignation(gameId, resignedColor, winner, chess);
 
 		if (!success) {

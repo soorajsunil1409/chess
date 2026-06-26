@@ -14,9 +14,78 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 	const [gameState, setGameState] = useState<GameState>();
 	const [gameHistory, setGameHistory] = useState<Move[]>([]);
 	const [boardChess, setBoardChess] = useState(() => new Chess());
+	const [currentMoveIndex, setCurrentMoveIndex] = useState<number>(0);
 
 	const masterChessRef = useRef(new Chess());
 	const masterGameState = useRef<GameState | null>(null);
+
+	const handlePieceClick = (square: Square) => {
+		return;
+	}
+
+	const goToMove = (moveIdx: number) => {
+		const chess = new Chess();
+
+		for (let i = 0; i < moveIdx; i++) {
+			chess.move(gameHistory[i]);
+		}
+
+		console.log(gameState);
+
+		setGameState(prev => {
+			if (!prev) return prev;
+
+			return {
+				...prev,
+				...getDynamicGameState(chess),
+			};
+		});
+
+		setBoardChess(chess);
+	};
+
+	const handleNextMove = () => {
+		if (currentMoveIndex >= gameHistory.length) return;
+
+		setCurrentMoveIndex(prev => prev + 1);
+	};
+
+	const handlePreviousMove = () => {
+		if (currentMoveIndex <= 0) return;
+
+		setCurrentMoveIndex(prev => prev - 1);
+	};
+
+	useEffect(() => {
+		goToMove(currentMoveIndex);
+	}, [currentMoveIndex, gameHistory]);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			e.preventDefault();
+			if (e.key === "ArrowLeft") {
+				handlePreviousMove();
+			}
+
+			if (e.key === "ArrowRight") {
+				handleNextMove();
+			}
+
+			if (e.key === "ArrowUp") {
+				setCurrentMoveIndex(gameHistory.length);
+			}
+
+			if (e.key === "ArrowDown") {
+				setCurrentMoveIndex(0);
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [currentMoveIndex, gameHistory.length]);
 
 	useEffect(() => {
 		const handleFetchGame = async () => {
@@ -29,17 +98,21 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 			const gs = convertGameToGameState(game, masterChess);
 			masterChessRef.current = masterChess;
 			masterGameState.current = gs
-			
+
 			const chess = new Chess();
 			chess.loadPgn(game.pgn);
+
+			const history = chess.history({ verbose: true })
 			setBoardChess(chess);
 			setGameState(gs);
 
-			setGameHistory(chess.history({ verbose: true }));
+			setCurrentMoveIndex(history.length)
+			setGameHistory(history);
 		}
 
 		handleFetchGame();
 	}, [gameId]);
+
 
 	if (!masterGameState.current || !gameState || !session) {
 		return <div>Loading...</div>;
@@ -70,31 +143,7 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 	const selectedLegalSquares: Square[] = [];
 	const selectedCapturableSquares: Square[] = [];
 
-	const handlePieceClick = (square: Square) => {
-		return;
-	}
-
-	const handleMoveClick = (moveIdx: number) => {
-		const chess = new Chess();
-
-		for (let i = 0; i < moveIdx; i++) {
-			chess.move(gameHistory[i]);
-		}
-
-		setGameState((prev) => {
-			if (!prev) return prev;
-
-			return {
-				...prev,
-				...getDynamicGameState(chess)
-			}
-
-		})
-
-		setBoardChess(chess);
-	}
-
-	console.log(gameState);
+	// console.log(gameState);
 
 	return (
 		<div className="flex flex-col md:flex-row h-auto md:h-[90vh] gap-5 bg-[#333333] p-3">
@@ -129,13 +178,27 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 				</div>
 			</div>
 
-			<div className="w-full md:w-90 lg:w-110 md:min-w-90 shrink-0 md:h-full">
+			<div className="w-full md:w-90 lg:w-110 md:min-w-90 shrink-0 flex md:flex-col flex-col-reverse gap-3 md:h-[90%]">
 				<DetailsSidebar
 					turn={turn}
 					gameState={masterGameState.current}
 					isReview={true}
-					handleMoveClick={handleMoveClick}
+					handleMoveClick={setCurrentMoveIndex}
 				/>
+				<div className="flex gap-3 w-full justify-center p-3 bg-[#222222] rounded-md">
+					<button
+						onClick={handlePreviousMove}
+						className="w-full cursor-pointer rounded-md border border-[#222222] bg-linear-to-t from-[#2d2d2d] to-[#464646] p-3 font-bold text-white shadow-md"
+					>
+						Previous
+					</button>
+					<button
+						onClick={handleNextMove}
+						className="w-full cursor-pointer rounded-md border border-[#222222] bg-linear-to-t from-[#2d2d2d] to-[#464646] p-3 font-bold text-white shadow-md"
+					>
+						Next
+					</button>
+				</div>
 			</div>
 
 		</div>

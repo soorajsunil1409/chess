@@ -4,7 +4,7 @@ import { calculateMaterial } from "./material";
 import { getGameStatus } from "./status";
 import { Challenge } from "@/store/challengeStore";
 
-export const getDynamicGameState = (chess: Chess) => {
+export const getDynamicGameState = (chess: Chess, result?: GameState["result"]) => {
 	const history = chess.history({ verbose: true });
 
 	const last = history.at(-1);
@@ -54,7 +54,7 @@ export const getDynamicGameState = (chess: Chess) => {
 			isCheck: chess.isCheck(),
 			isCheckMate: chess.isCheckmate(),
 			isDraw: chess.isDraw(),
-			isGameOver: chess.isGameOver(),
+			isGameOver: chess.isGameOver() || result === "resignation",
 			isStalemate: chess.isStalemate(),
 			isThreefoldRepetition: chess.isThreefoldRepetition(),
 			isInsufficientMaterial: chess.isInsufficientMaterial(),
@@ -71,10 +71,12 @@ export const convertGameToGameState = (
 	game: DbGameState,
 	chess: Chess
 ): GameState => {
+	console.log(game);
+
 	const gameState: GameState = {
 		gameId: game.id,
 
-		...getDynamicGameState(chess),
+		...getDynamicGameState(chess, game.result ? game.result : ""),
 
 		whitePlayerId: game.whitePlayerId,
 		whitePlayerUsername: game.whitePlayerUsername,
@@ -153,7 +155,6 @@ export const updateGameState = (game: GameState, chess: Chess, move?: Move | nul
 
 	return game;
 }
-
 
 export const initializeGame = (gameId: string, chess: Chess, challenge: Challenge) => {
 	const game: GameState = {
