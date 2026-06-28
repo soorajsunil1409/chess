@@ -1,4 +1,5 @@
-import { index, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { index, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { users } from "./userSchema";
 
 export const friendRequestStatusEnum = pgEnum(
 	"friend_request_status",
@@ -10,9 +11,13 @@ export const friendRequests = pgTable(
 	{
 		id: text("id").primaryKey(),
 
-		fromUserId: text("from_user_id").notNull(),
+		fromUserId: text("from_user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
 
-		toUserId: text("to_user_id").notNull(),
+		toUserId: text("to_user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
 
 		status: friendRequestStatusEnum("status")
 			.notNull()
@@ -38,22 +43,25 @@ export const friendRequests = pgTable(
 export const friends = pgTable(
 	"friends",
 	{
-		user1Id: text("user1_id").notNull(),
+		user1Id: text("user1_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
 
-		user2Id: text("user2_id").notNull(),
+		user2Id: text("user2_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
 
 		createdAt: timestamp("created_at")
 			.defaultNow()
 			.notNull(),
 	},
 	(table) => [
-		uniqueIndex("friends_unique")
-			.on(table.user1Id, table.user2Id),
+		primaryKey({
+			columns: [table.user1Id, table.user2Id],
+		}),
 
-		index("friends_user1_idx")
-			.on(table.user1Id),
+		index("friends_user1_idx").on(table.user1Id),
 
-		index("friends_user2_idx")
-			.on(table.user2Id),
+		index("friends_user2_idx").on(table.user2Id),
 	]
 );

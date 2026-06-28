@@ -15,6 +15,13 @@
       "when": 1782557321876,
       "tag": "0002_dazzling_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782671444831,
+      "tag": "0003_curved_firebrand",
+      "breakpoints": true
     }
   ]
 }
