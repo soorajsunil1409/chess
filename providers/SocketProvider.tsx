@@ -6,6 +6,7 @@ import { socket } from "@/lib/socket";
 import { useOnlineStore } from "@/store/onlineStore";
 import { Challenge, useChallengeStore } from "@/store/challengeStore";
 import { useRouter } from "next/navigation";
+import { useGamesStore } from "@/store/gamesStore";
 
 export default function SocketProvider() {
 	const { data: session, status } = useSession();
@@ -13,7 +14,9 @@ export default function SocketProvider() {
 
 	const setPlayers = useOnlineStore((state) => state.setPlayers);
 	const setChallenges = useChallengeStore((state) => state.setChallenges);
+	const setGames = useGamesStore((state) => state.setGames);
 
+	// Listener to update online Players
 	useEffect(() => {
 		const handlePlayers = (players: any[]) => {
 			setPlayers(players);
@@ -26,12 +29,23 @@ export default function SocketProvider() {
 		};
 	}, [setPlayers]);
 
+	// On login establish a socket and fetch all the games
 	useEffect(() => {
 		if (
 			status !== "authenticated" ||
 			!session?.user
 		)
 			return;
+
+		const handleGetGames = async () => {
+			const res = await fetch("/api/games");
+
+			const { games } = await res.json();
+
+			setGames(games);
+		}
+
+		handleGetGames();
 
 		if (!socket.connected) {
 			socket.auth = {
@@ -41,14 +55,17 @@ export default function SocketProvider() {
 
 			socket.connect();
 		}
+
 	}, [status]);
 
+	// If unauthenticated disconnect the socket
 	useEffect(() => {
 		if (status === "unauthenticated") {
 			socket.disconnect();
 		}
 	}, [status]);
 
+	// Listener to update incoming challenges
 	useEffect(() => {
 		const handleUpdateChallenges = (challenges: Challenge[]) => {
 			setChallenges(challenges);
@@ -61,6 +78,7 @@ export default function SocketProvider() {
 		}
 	}, []);
 
+	// Listener to check if a game started and redirect to game page
 	useEffect(() => {
 		const handleGame = ({ gameId }: { gameId: string }) => {
 			router.push(`/game/${gameId}`);

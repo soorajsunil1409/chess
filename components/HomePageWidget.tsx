@@ -1,9 +1,10 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import PreLoginHomePage from "./PreLoginHomePage";
 import { LobbyPage } from "./LobbyPage";
 import { Session } from "next-auth";
+import { useEffect } from "react";
+import { useGamesStore } from "@/store/gamesStore";
 
 const HomePageWidget = ({
 	session,

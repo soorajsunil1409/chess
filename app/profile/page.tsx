@@ -6,24 +6,12 @@ import { useSession } from "next-auth/react";
 import { DbGameState } from "@/lib/socket/stores/games";
 import RecentGamesWidget from "@/components/RecentGamesWidget";
 import Link from "next/link";
+import { useGamesStore } from "@/store/gamesStore";
 
 const ProfilePage = () => {
 	const { data: session } = useSession();
 
-	const [games, setGames] =
-		useState<DbGameState[]>([]);
-
-	useEffect(() => {
-		const getGames = async () => {
-			const res = await fetch("/api/games");
-
-			const { games } = await res.json();
-
-			setGames(games);
-		};
-
-		getGames();
-	}, []);
+	const games = useGamesStore((state) => state.games);
 
 	const wins = games.filter((g) => {
 		if (!session) return false;
@@ -56,7 +44,7 @@ const ProfilePage = () => {
 	).length;
 
 	return (
-		<main className="flex w-full justify-center p-6 lg:min-h-0">
+		<main className="flex w-full justify-center p-6 lg:min-h-0 bg-[#090909] flex-col flex-1">
 			<div className="flex w-full max-w-7xl flex-col gap-6 lg:min-h-0">
 
 				<div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-[#181818] p-6">
