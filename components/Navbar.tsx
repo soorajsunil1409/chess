@@ -525,7 +525,7 @@ export default function Navbar({
 
 				<main className="min-h-0 flex-1 overflow-auto bg-[#090909]">
 
-					<div className="h-full flex flex-col">
+					<div className="h-full flex flex-col bg-[#333333]">
 						{children}
 					</div>
 

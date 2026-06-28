@@ -159,7 +159,7 @@ const GamePageWidget = ({ gameId }: { gameId: string }) => {
 	const turn = gameState.turn === "w" ? "White" : "Black";
 
 	return (
-		<div className="flex flex-col md:flex-row h-auto md:h-[90vh] gap-5 bg-[#333333] p-3">
+		<div className="flex flex-col md:flex-row h-auto md:h-[92vh] gap-5 bg-[#333333] p-3">
 			<div className="flex-1 flex justify-center min-w-0">
 				<BoardWidget
 					gameId={gameId}
