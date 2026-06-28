@@ -33,7 +33,7 @@ const DetailsSidebar = ({
 	}, [gameState?.history]);
 
 	return (
-		<div className="w-full h-full bg-[#222222] rounded-md flex flex-col">
+		<div className="w-full bg-[#222222] rounded-md flex flex-col overflow-auto h-full">
 			<div className="flex items-center gap-3 p-5">
 				<div
 					className="size-6 rounded"
@@ -46,13 +46,11 @@ const DetailsSidebar = ({
 
 			<Separator />
 
-			<div className="overflow-auto rounded-md">
+			<div className="overflow-auto rounded-md flex-1 min-h-0">
 				<MovesTable formattedHistory={formattedHistory} handleMoveClick={handleMoveClick} />
 			</div>
 
 			<Separator />
-
-			<div className="flex-1" />
 		</div>
 	);
 };

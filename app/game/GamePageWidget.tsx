@@ -159,9 +159,8 @@ const GamePageWidget = ({ gameId }: { gameId: string }) => {
 	const turn = gameState.turn === "w" ? "White" : "Black";
 
 	return (
-		<div className="flex flex-col md:flex-row h-max md:h-[92.7vh] gap-5 bg-[#333333] p-3">
-			<div className="max-w-[10%] xl:flex-1"></div>
-			<div className="flex-1 min-w-0 flex justify-center">
+		<div className="flex flex-col md:flex-row h-auto md:h-[90vh] gap-5 bg-[#333333] p-3">
+			<div className="flex-1 flex justify-center min-w-0">
 				<BoardWidget
 					gameId={gameId}
 					gameState={gameState}
@@ -177,7 +176,7 @@ const GamePageWidget = ({ gameId }: { gameId: string }) => {
 				/>
 			</div>
 
-			<div className="w-full md:w-90 lg:w-110 md:min-w-90 flex h-[90%] md:flex-col flex-col-reverse gap-3">
+			<div className="w-full md:w-90 lg:w-110 md:min-w-90 shrink-0 flex md:flex-col flex-col-reverse h-full gap-3 justify-between">
 				<DetailsSidebar
 					turn={turn}
 					gameState={gameState}

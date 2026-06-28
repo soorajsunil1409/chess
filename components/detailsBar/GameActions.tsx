@@ -47,7 +47,7 @@ const GameActions = ({
 	}
 
 	return (
-		<div className="flex gap-3">
+		<div className="flex gap-3 w-full justify-center p-3 bg-[#222222] rounded-md">
 			<div
 				className="relative flex-1"
 				ref={resignPopupRef}
@@ -98,13 +98,17 @@ const GameActions = ({
 				)}
 			</div>
 
-			<button
-				disabled={gameState.status.isGameOver || drawRequested}
-				onClick={handleDrawRequest}
-				className="flex-1 cursor-pointer rounded-md border border-[#222222] bg-linear-to-t from-[#2d2d2d] to-[#464646] p-3 font-bold text-white shadow-md"
+			<div
+				className="relative flex-1"
 			>
-				Draw
-			</button>
+				<button
+					disabled={gameState.status.isGameOver || drawRequested}
+					onClick={handleDrawRequest}
+					className="w-full cursor-pointer rounded-md border border-[#222222] bg-linear-to-t from-[#2d2d2d] to-[#464646] p-3 font-bold text-white shadow-md"
+				>
+					Draw
+				</button>
+			</div>
 		</div>
 	);
 };

@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { GameState } from "@/lib/socket/stores/games";
 import { socket } from "@/lib/socket";
 import CapturedPiecesWidget from "../CapturedPiecesWidget";
-import { BoardRow } from "./BoardRow";
 import BoardPlayspace from "./BoardPlayspace";
 
 const BoardWidget = ({
@@ -106,7 +105,7 @@ const BoardWidget = ({
 	}
 
 	return (
-		<div className="rounded flex flex-col gap-2 w-full h-full">
+		<div className="flex flex-col gap-2 w-[min(76vh,95vw)]">
 			<CapturedPiecesWidget
 				capturedPieces={topPlayerCapturedPieces}
 				color={bottomPlayerColor}

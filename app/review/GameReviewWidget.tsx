@@ -186,7 +186,7 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 				</div>
 			</div>
 
-			<div className="w-full md:w-90 lg:w-110 md:min-w-90 shrink-0 flex md:flex-col flex-col-reverse gap-3 md:h-[90%]">
+			<div className="w-full md:w-90 lg:w-110 md:min-w-90 shrink-0 flex md:flex-col flex-col-reverse gap-3 h-full">
 				<DetailsSidebar
 					turn={turn}
 					gameState={masterGameState.current}
