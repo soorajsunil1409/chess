@@ -71,8 +71,6 @@ export const convertGameToGameState = (
 	game: DbGameState,
 	chess: Chess
 ): GameState => {
-	console.log(game);
-
 	const gameState: GameState = {
 		gameId: game.id,
 
@@ -138,15 +136,19 @@ export const updateGameState = (game: GameState, chess: Chess, move?: Move | nul
 				? "b"
 				: "w";
 		} else if (
-			chess.isStalemate() ||
-			chess.isDraw() ||
-			chess.isThreefoldRepetition() ||
+			chess.isStalemate()
+		) {
+			game.result = "stalemate";
+			game.winner = "draw";
+		} else if (
+			chess.isThreefoldRepetition()
+		) {
+			game.result = "threefold";
+			game.winner = "draw";
+		} else if (
 			chess.isInsufficientMaterial()
 		) {
-			game.result = chess.isStalemate()
-				? "stalemate"
-				: "draw";
-
+			game.result = "insufficient";
 			game.winner = "draw";
 		}
 

@@ -4,7 +4,6 @@ import {
 	text,
 	timestamp,
 	index,
-	integer,
 } from "drizzle-orm/pg-core";
 
 export const gameStatusEnum = pgEnum(
@@ -20,16 +19,19 @@ export const gameWinnerEnum = pgEnum(
 export const gameResultEnum = pgEnum(
 	"game_result",
 	[
+		"",
 		"checkmate",
 		"stalemate",
 		"draw",
 		"resignation",
+		"threefold",
+		"insufficient"
 	]
 );
 
 export const gameColorEnum = pgEnum(
 	"game_color",
-	["w", "b"]
+	["w", "b", ""]
 );
 
 export const users = pgTable("users", {

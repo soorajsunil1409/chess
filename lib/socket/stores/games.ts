@@ -19,12 +19,15 @@ export type DbGameState = {
 	pgn: string;
 	status: "active" | "finished";
 	winner: "w" | "b" | "draw" | null;
-	resignedBy: "w" | "b" | null;
+	resignedBy: "w" | "b" | "" | null;
 	result:
+	| ""
 	| "draw"
 	| "checkmate"
 	| "stalemate"
 	| "resignation"
+	| "threefold"
+	| "insufficient"
 	| null;
 	startedAt: Date;
 	endedAt: Date | null;
@@ -67,7 +70,7 @@ export type GameState = {
 
 	winner: Color | "draw" | "";
 	resignedBy: Color | "";
-	result: "checkmate" | "stalemate" | "draw" | "resignation" | "";
+	result: "checkmate" | "stalemate" | "draw" | "threefold" | "insufficient" | "resignation" | "";
 };
 
 export const games = new Map<string, GameState>();

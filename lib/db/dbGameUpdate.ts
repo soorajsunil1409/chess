@@ -21,8 +21,12 @@ export const updateGameMove = async (game: GameState, chess: Chess, socket: Sock
 	}
 }
 
-export const updateGameOver = async (gameId: string, result: "draw" | "checkmate" | "stalemate" | "resignation", winner: Color | "draw", socket: Socket) => {
+export const updateGameOver = async (gameId: string, result: GameState["result"], winner: Color | "draw", socket: Socket) => {
 	try {
+		if (result === "") {
+			throw ("Result is empty");
+		}
+
 		await db
 			.update(gamesTable)
 			.set({
@@ -41,7 +45,7 @@ export const updateGameOver = async (gameId: string, result: "draw" | "checkmate
 
 		socket.emit(
 			"game:error",
-			""
+			error
 		);
 	}
 }
@@ -67,6 +71,47 @@ export const updateGameResignation = async (
 				result: "resignation",
 				resignedBy,
 				winner,
+				status: "finished",
+				endedAt: new Date(),
+			})
+			.where(
+				eq(
+					gamesTable.id,
+					gameId
+				)
+			);
+
+		return {
+			success: true,
+		};
+	} catch (error) {
+		console.error(error);
+
+		return {
+			success: false,
+			error: "Failed to update game",
+		};
+	}
+};
+
+export const updateGameDraw = async (
+	gameId: string,
+	chess: Chess
+) => {
+	const resultString = "1/2-1/2";
+
+	const pgn = chess
+		.pgn()
+		.replace('[Result "*"]', `[Result "${resultString}"]`)
+		.replace(/\*$/, resultString);
+
+	try {
+		await db
+			.update(gamesTable)
+			.set({
+				pgn,
+				winner: "draw",
+				result: "draw",
 				status: "finished",
 				endedAt: new Date(),
 			})

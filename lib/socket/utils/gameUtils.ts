@@ -1,6 +1,5 @@
 import { Chess } from "chess.js";
 import { chessGames, games, GameState } from "../stores/games";
-import { Challenge } from "@/store/challengeStore";
 import { db } from "@/db";
 import { gamesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";

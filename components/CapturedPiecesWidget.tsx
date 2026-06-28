@@ -26,7 +26,7 @@ const CapturedPiecesWidget = ({ capturedPieces, color, name, material }: { captu
 			<User2
 				fill="#222222"
 				strokeWidth={0}
-				className="h-full w-auto aspect-square rounded-md bg-[#555555] p-1"
+				className="h-auto w-10 aspect-square rounded-md bg-[#555555] p-1"
 			/>
 			<div className="flex flex-col text-white justify-start w-full h-full">
 				<div className="font-bold h-1/2 leading-none flex gap-2 items-center">

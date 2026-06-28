@@ -15,6 +15,7 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 	const [gameHistory, setGameHistory] = useState<Move[]>([]);
 	const [boardChess, setBoardChess] = useState(() => new Chess());
 	const [currentMoveIndex, setCurrentMoveIndex] = useState<number>(0);
+	const [positions, setPositions] = useState<Chess[]>(); // TODO optimize positions
 
 	const masterChessRef = useRef(new Chess());
 	const masterGameState = useRef<GameState | null>(null);
@@ -29,8 +30,6 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 		for (let i = 0; i < moveIdx; i++) {
 			chess.move(gameHistory[i]);
 		}
-
-		console.log(gameState);
 
 		setGameState(prev => {
 			if (!prev) return prev;
@@ -128,8 +127,17 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 	const topPlayerCapturedPieces: PieceSymbol[] = isWhiteView ? gameState.blacksCapturedPieces : gameState.whitesCapturedPieces;
 	const bottomPlayerCapturedPieces: PieceSymbol[] = isWhiteView ? gameState.whitesCapturedPieces : gameState.blacksCapturedPieces;
 
-	const topPlayerMaterialUpBy = 0;
-	const bottomPlayerMaterialUpBy = 0;
+	const advantage = gameState.material.advantage;
+
+	const topPlayerMaterialUpBy =
+		isWhiteView
+			? advantage < 0 ? -advantage : 0
+			: advantage > 0 ? advantage : 0;
+
+	const bottomPlayerMaterialUpBy =
+		isWhiteView
+			? advantage > 0 ? advantage : 0
+			: advantage < 0 ? -advantage : 0;
 
 	const board = boardChess.board();
 	const boardAligned = !isWhiteView

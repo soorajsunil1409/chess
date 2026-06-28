@@ -1,6 +1,6 @@
 {
-  "id": "879100d3-e165-484a-87b6-b2dbe16a2bc7",
-  "prevId": "2963183d-e32d-4b7a-a123-0774227ad29f",
+  "id": "9ceb45e5-2ebb-444e-be92-6239935a0e1d",
+  "prevId": "732a4d71-ff12-490d-aece-bbe3b102d980",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -198,17 +198,21 @@
       "schema": "public",
       "values": [
         "w",
-        "b"
+        "b",
+        ""
       ]
     },
     "public.game_result": {
       "name": "game_result",
       "schema": "public",
       "values": [
+        "",
         "checkmate",
         "stalemate",
         "draw",
-        "resignation"
+        "resignation",
+        "threefold",
+        "insufficient"
       ]
     },
     "public.game_status": {

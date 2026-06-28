@@ -53,15 +53,6 @@ const DetailsSidebar = ({
 			<Separator />
 
 			<div className="flex-1" />
-
-			{
-				!isReview &&
-				<div className="p-3">
-					<GameActions
-						gameState={gameState}
-					/>
-				</div>
-			}
 		</div>
 	);
 };

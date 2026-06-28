@@ -23,6 +23,16 @@ const BoardPlayspace = ({
 	selectedCapturableSquares,
 	handlePieceClick,
 }: BoardPlayspaceProps) => {
+	const messages = new Map([
+		["", ""],
+		["draw", "by agreement"],
+		["stalemate", "by stalemate"],
+		["checkmate", "by checkmate"],
+		["resignation", "by resignation"],
+		["threefold", "by threefold repetition"],
+		["insufficient", "by insufficient materials"]
+	]);
+
 	return (
 		<div className="relative aspect-square w-full max-w-[76vh]">
 			{gameState.status.isGameOver && (
@@ -30,14 +40,13 @@ const BoardPlayspace = ({
 					<div className="w-100 overflow-hidden rounded-lg bg-[#3a3a3a] shadow-[0_2.8px_2.2px_rgba(0,0,0,0.034),0_6.7px_5.3px_rgba(0,0,0,0.048),0_12.5px_10px_rgba(0,0,0,0.06),0_22.3px_17.9px_rgba(0,0,0,0.072),0_41.8px_33.4px_rgba(0,0,0,0.086),0_100px_80px_rgba(0,0,0,0.12)]">
 						<div className="flex flex-col p-3 text-center text-white">
 							<div className="text-2xl font-bold">
-								{gameState.winner === "w"
-									? "White"
-									: "Black"}{" "}
-								won
+								{gameState.winner === "draw" ? "Game drawn" : gameState.winner === "w"
+									? "White won"
+									: "Black won"}
 							</div>
 
 							<div className="text-md">
-								by {gameState.result}
+								{messages.get(gameState.result)}
 							</div>
 						</div>
 
