@@ -8,6 +8,7 @@ import { z } from "zod";
 import { loginSchema } from "@/lib/validations/auth";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 type LoginErrors =
 	z.inferFlattenedErrors<typeof loginSchema>["fieldErrors"];
@@ -37,7 +38,7 @@ export default function LoginPage() {
 
 		setErrors({});
 		setAuthError("");
-		
+
 		setLoading(true);
 
 		const result = await loginUser({
@@ -50,6 +51,7 @@ export default function LoginPage() {
 				setErrors(result.errors);
 			}
 
+			setLoading(false);
 			return;
 		}
 
@@ -65,6 +67,8 @@ export default function LoginPage() {
 			setAuthError(signInResult.error);
 			return;
 		}
+
+		toast.success("Successfully logged in!");
 
 		router.replace("/");
 		router.refresh();

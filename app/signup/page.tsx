@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function SignupPage() {
 	const router = useRouter();
@@ -40,6 +41,8 @@ export default function SignupPage() {
 			setErrors(result.errors ?? {});
 			return;
 		}
+
+		toast.success("Successfully created user!")
 
 		router.push("/login");
 	};
