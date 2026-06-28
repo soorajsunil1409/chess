@@ -1,7 +1,7 @@
 "use client"
 
 import { socket } from "@/lib/socket";
-import { useChallengeStore } from "@/store/challengeStore";
+import { Challenge, useChallengeStore } from "@/store/challengeStore";
 import { Bell, Check, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,24 @@ const Navbar = () => {
 	const [open, setOpen] = useState(false);
 
 	const challenges = useChallengeStore((state) => state.challenges);
+
+	const handleChallengeAccept = (challenge: Challenge) => {
+		socket.emit(
+			"challenge:accept",
+			challenge.challengeId
+		)
+
+		setOpen(false);
+	}
+
+	const handleChallengeDecline = (challenge: Challenge) => {
+		socket.emit(
+			"challenge:decline",
+			challenge.challengeId
+		)
+
+		setOpen(false);
+	}
 
 	return (
 		<nav className="border-b border-zinc-800 bg-zinc-950">
@@ -121,24 +139,14 @@ const Navbar = () => {
 															<div className="flex gap-2">
 																<button
 																	className="rounded-lg bg-green-600 p-2 hover:bg-green-500"
-																	onClick={() =>
-																		socket.emit(
-																			"challenge:accept",
-																			challenge.challengeId
-																		)
-																	}
+																	onClick={() => handleChallengeAccept(challenge)}
 																>
 																	<Check className="size-4 text-white" />
 																</button>
 
 																<button
 																	className="rounded-lg bg-red-600 p-2 hover:bg-red-500"
-																	onClick={() =>
-																		socket.emit(
-																			"challenge:decline",
-																			challenge.challengeId
-																		)
-																	}
+																	onClick={() => handleChallengeDecline(challenge)}
 																>
 																	<X className="size-4 text-white" />
 																</button>
