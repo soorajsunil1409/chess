@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 
 import {
@@ -12,7 +12,6 @@ import {
 	Home,
 	User,
 	Users,
-	Swords,
 	History,
 	Mail,
 	Search,
@@ -64,6 +63,17 @@ export default function Navbar({
 	children,
 }: Props) {
 	const pathname = usePathname();
+	const router = useRouter();
+	const [search, setSearch] = useState("");
+	const [searchOpen, setSearchOpen] = useState(false);
+
+	const handleSearch = () => {
+		if (!search.trim()) return;
+
+		console.log(search);
+
+		router.push(`/search?q=${encodeURIComponent(search)}`);
+	};
 
 	const {
 		data: session,
@@ -178,7 +188,6 @@ export default function Navbar({
 			)}
 
 			{/* Sidebar */}
-
 			<aside
 				className={`fixed left-0 top-0 z-200 flex h-full lg:w-50 w-72 flex-col border-r border-zinc-800 bg-[#111111] transition-transform lg:static lg:translate-x-0 ${sidebarOpen
 					? "translate-x-0"
@@ -329,20 +338,23 @@ export default function Navbar({
 			{/* Main */}
 
 			<div className="flex min-w-0 flex-1 flex-col">
-
 				{/* Navbar */}
-
 				<nav className="flex h-16 items-center justify-between border-b border-zinc-800 bg-[#111111] px-6">
 
-					<div className="flex items-center gap-4">
+					<div className="flex items-center gap-3">
 
 						<button
-							onClick={() =>
-								setSidebarOpen(true)
-							}
+							onClick={() => setSidebarOpen(true)}
 							className="rounded-lg p-2 hover:bg-zinc-800 lg:hidden"
 						>
 							<Menu size={22} />
+						</button>
+
+						<button
+							onClick={() => setSearchOpen(true)}
+							className="rounded-lg p-2 hover:bg-zinc-800 md:hidden"
+						>
+							<Search size={20} />
 						</button>
 
 						<div className="relative hidden md:block">
@@ -353,9 +365,23 @@ export default function Navbar({
 							/>
 
 							<input
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										handleSearch();
+									}
+								}}
 								placeholder="Search players..."
-								className="w-72 rounded-xl border border-zinc-700 bg-[#181818] py-2 pl-10 pr-4 text-sm outline-none transition focus:border-zinc-500"
+								className="w-72 rounded-xl border border-zinc-700 bg-[#181818] py-2 pl-10 pr-20 text-sm outline-none transition focus:border-zinc-500"
 							/>
+
+							<button
+								onClick={handleSearch}
+								className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-zinc-700 px-3 py-1 text-xs transition hover:bg-zinc-600"
+							>
+								Search
+							</button>
 
 						</div>
 
@@ -524,20 +550,54 @@ export default function Navbar({
 					</div>
 
 				</nav>
+				{searchOpen && (
+					<div className="border-b border-zinc-800 bg-[#111111] p-4 md:hidden">
+
+						<div className="flex gap-2">
+
+							<input
+								autoFocus
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										handleSearch();
+										setSearchOpen(false);
+									}
+								}}
+								placeholder="Search players..."
+								className="flex-1 rounded-xl border border-zinc-700 bg-[#181818] px-4 py-2 text-sm outline-none focus:border-zinc-500"
+							/>
+
+							<button
+								onClick={() => {
+									handleSearch();
+									setSearchOpen(false);
+								}}
+								className="rounded-xl bg-zinc-700 px-4 transition hover:bg-zinc-600"
+							>
+								<Search size={18} />
+							</button>
+
+							<button
+								onClick={() => setSearchOpen(false)}
+								className="rounded-xl px-3 transition hover:bg-zinc-800"
+							>
+								<X size={20} />
+							</button>
+
+						</div>
+
+					</div>
+				)}
 
 				{/* Page */}
-
 				<main className="min-h-0 flex-1 overflow-auto bg-[#090909]">
-
 					<div className="h-full flex flex-col bg-[#333333]">
 						{children}
 					</div>
-
 				</main>
-
 			</div>
-
 		</div>
-
 	);
 }

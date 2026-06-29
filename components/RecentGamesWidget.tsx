@@ -16,7 +16,7 @@ type Props = {
 const RecentGamesWidget = ({
 	games,
 	title = "Games History",
-	username = "",
+	username = "1",
 	showHeader = true,
 	maxGames,
 	className = "",
