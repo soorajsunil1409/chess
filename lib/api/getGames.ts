@@ -1,23 +1,28 @@
+import { db } from "@/db";
 import { DbGameState } from "../socket/stores/games";
+import { gamesTable } from "@/db/schema";
+import { and, eq, or } from "drizzle-orm";
 
 export const getGamesFromUserId: (userId: string) => Promise<DbGameState[] | []> = async (userId: string) => {
-	const res = await fetch(`${process.env.AUTH_URL}/api/games/${userId}`);
+	const fetchedGames = await db.select().from(gamesTable).where(
+		and(
+			or(
+				eq(gamesTable.whitePlayerId, userId),
+				eq(gamesTable.blackPlayerId, userId)
+			),
+			eq(gamesTable.status, "finished")
+		)
+	)
 
-	const data = await res.json();
-
-	const fetchedGames: DbGameState[] | [] = data.games;
-
-	return fetchedGames
+	return fetchedGames;
 }
 
 export const getGameFromGameId: (gameId: string) => Promise<DbGameState | null> = async (gameId: string) => {
-	const res = await fetch(`${process.env.AUTH_URL}/api/game/${gameId}`);
+	const game = await db.select().from(gamesTable).where(
+		eq(gamesTable.id, gameId)
+	).limit(1);
 
-	const data = await res.json();
+	if (game.length < 1) return null;
 
-	const game: DbGameState = data.game;
-
-	if (!game) return null;
-
-	return game;
+	return game[0];
 }
