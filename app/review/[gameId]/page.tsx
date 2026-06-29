@@ -1,3 +1,4 @@
+import { getGameFromGameId } from "@/lib/api/getGames";
 import GameReviewWidget from "../GameReviewWidget";
 
 const GameReviewPage = async ({ params }: {
@@ -5,11 +6,13 @@ const GameReviewPage = async ({ params }: {
 		gameId: string;
 	}>
 }) => {
-	const {gameId} = await params;
+	const { gameId } = await params;
+	const game = await getGameFromGameId(gameId);
+	if (!game) return;
 
 	return (
 		<div className="p-2">
-			<GameReviewWidget gameId={gameId} />
+			<GameReviewWidget gameId={gameId} game={game} />
 		</div>
 	)
 }

@@ -1,50 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-
-import { DbGameState } from "@/lib/socket/stores/games";
 import RecentGamesWidget from "@/components/RecentGamesWidget";
 import Link from "next/link";
-import { useGamesStore } from "@/store/gamesStore";
+import { useMemo } from "react";
+import { DbGameState } from "@/lib/socket/stores/games";
+import { TUser } from "@/lib/api/getUser";
+import ProfileSkeleton from "./ProfileSkeleton";
 
-const ProfilePage = () => {
+const ProfilePageWidget = ({
+	user,
+	games
+}: {
+	user: TUser,
+	games: DbGameState[]
+}) => {
 	const { data: session } = useSession();
 
-	const games = useGamesStore((state) => state.games);
+	const isOwnProfile = session?.user?.id === user.id;
 
-	const wins = games.filter((g) => {
-		if (!session) return false;
+	const stats = useMemo(() => {
+		let wins = 0;
+		let losses = 0;
+		let draws = 0;
 
-		return (
-			(g.whitePlayerUsername ===
-				session.user?.name &&
-				g.winner === "w") ||
-			(g.blackPlayerUsername ===
-				session.user?.name &&
-				g.winner === "b")
-		);
-	}).length;
+		for (const game of games) {
+			if (game.winner === "draw") {
+				draws++;
+			} else if (
+				(game.whitePlayerUsername === user?.username && game.winner === "w") ||
+				(game.blackPlayerUsername === user?.username && game.winner === "b")
+			) {
+				wins++;
+			} else {
+				losses++;
+			}
+		}
 
-	const losses = games.filter((g) => {
-		if (!session) return false;
+		return { wins, losses, draws };
+	}, [games, user]);
 
-		return (
-			(g.whitePlayerUsername ===
-				session.user?.name &&
-				g.winner === "b") ||
-			(g.blackPlayerUsername ===
-				session.user?.name &&
-				g.winner === "w")
-		);
-	}).length;
-
-	const draws = games.filter(
-		(g) => g.winner === "draw"
-	).length;
+	if (!user) {
+		return <ProfileSkeleton />;
+	}
 
 	return (
-		<main className="flex w-full justify-center p-6 lg:min-h-0 bg-[#090909] flex-col flex-1">
+		<main className="flex w-full items-center justify-center p-6 lg:min-h-0 bg-[#090909] flex-col flex-1">
 			<div className="flex w-full max-w-7xl flex-col gap-6 lg:min-h-0">
 
 				<div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-[#181818] p-6">
@@ -52,7 +53,7 @@ const ProfilePage = () => {
 					<div className="flex items-center gap-5">
 
 						<div className="flex h-24 w-24 items-center justify-center rounded-full bg-zinc-700 text-4xl font-bold text-white">
-							{session?.user?.name
+							{user?.username
 								?.charAt(0)
 								.toUpperCase()}
 						</div>
@@ -60,20 +61,23 @@ const ProfilePage = () => {
 						<div className="flex flex-col gap-2">
 
 							<h1 className="text-3xl font-bold text-white">
-								{session?.user?.name}
+								{user?.username}
 							</h1>
 
 							<span className="text-zinc-400">
-								{session?.user?.email}
+								{user?.email}
 							</span>
 
 						</div>
 
 					</div>
 
-					<button className="rounded-lg border border-zinc-700 bg-[#111111] px-5 py-3 transition hover:bg-zinc-800">
-						Edit Profile
-					</button>
+					{
+						isOwnProfile &&
+						<button className="rounded-lg border border-zinc-700 bg-[#111111] px-5 py-3 transition hover:bg-zinc-800">
+							Edit Profile
+						</button>
+					}
 
 				</div>
 
@@ -98,7 +102,7 @@ const ProfilePage = () => {
 						</span>
 
 						<span className="text-3xl font-bold text-white">
-							{wins}
+							{stats.wins}
 						</span>
 
 					</div>
@@ -110,7 +114,7 @@ const ProfilePage = () => {
 						</span>
 
 						<span className="text-3xl font-bold text-white">
-							{losses}
+							{stats.losses}
 						</span>
 
 					</div>
@@ -122,7 +126,7 @@ const ProfilePage = () => {
 						</span>
 
 						<span className="text-3xl font-bold text-white">
-							{draws}
+							{stats.draws}
 						</span>
 
 					</div>
@@ -140,7 +144,7 @@ const ProfilePage = () => {
 							</h2>
 
 							<Link
-								href="/games"
+								href={isOwnProfile ? "/games" : `/games/${user.id}`}
 								className="rounded-lg border border-zinc-700 bg-[#111111] px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
 							>
 								View All
@@ -172,7 +176,7 @@ const ProfilePage = () => {
 								</span>
 
 								<span className="text-white">
-									{session?.user?.name}
+									{user?.username}
 								</span>
 
 							</div>
@@ -184,7 +188,7 @@ const ProfilePage = () => {
 								</span>
 
 								<span className="truncate text-right text-white">
-									{session?.user?.email}
+									{user?.email}
 								</span>
 
 							</div>
@@ -208,7 +212,13 @@ const ProfilePage = () => {
 								</span>
 
 								<span className="text-white">
-									—
+									{user?.createdAt
+										? new Date(user.createdAt).toLocaleDateString("en-US", {
+											year: "numeric",
+											month: "long",
+											day: "numeric",
+										})
+										: "—"}
 								</span>
 
 							</div>
@@ -231,7 +241,7 @@ const ProfilePage = () => {
 									{games.length === 0
 										? "0%"
 										: `${Math.round(
-											(wins / games.length) *
+											(stats.wins / games.length) *
 											100
 										)}%`}
 								</span>
@@ -275,4 +285,4 @@ const ProfilePage = () => {
 	);
 };
 
-export default ProfilePage;
+export default ProfilePageWidget;

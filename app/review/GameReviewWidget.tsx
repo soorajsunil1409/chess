@@ -4,12 +4,12 @@ import BoardPlayspace from "@/components/board/BoardPlayspace";
 import CapturedPiecesWidget from "@/components/CapturedPiecesWidget";
 import DetailsSidebar from "@/components/detailsBar/DetailsBar";
 import { convertGameToGameState, getDynamicGameState } from "@/lib/chess";
-import { GameState } from "@/lib/socket/stores/games";
+import { DbGameState, GameState } from "@/lib/socket/stores/games";
 import { Chess, Move, PieceSymbol, Square } from "chess.js";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react"
 
-const GameReviewWidget = ({ gameId }: { gameId: string }) => {
+const GameReviewWidget = ({ gameId, game }: { gameId: string, game: DbGameState }) => {
 	const { data: session } = useSession();
 	const [gameState, setGameState] = useState<GameState>();
 	const [gameHistory, setGameHistory] = useState<Move[]>([]);
@@ -88,10 +88,6 @@ const GameReviewWidget = ({ gameId }: { gameId: string }) => {
 
 	useEffect(() => {
 		const handleFetchGame = async () => {
-			const res = await fetch(`/api/games/${gameId}`);
-
-			const { game } = await res.json();
-
 			const masterChess = new Chess();
 			masterChess.loadPgn(game.pgn);
 			const gs = convertGameToGameState(game, masterChess);

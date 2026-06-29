@@ -7,6 +7,7 @@ import { useOnlineStore } from "@/store/onlineStore";
 import { Challenge, useChallengeStore } from "@/store/challengeStore";
 import { useRouter } from "next/navigation";
 import { useGamesStore } from "@/store/gamesStore";
+import { getGamesFromUserId } from "@/lib/api/getGames";
 
 export default function SocketProvider() {
 	const { data: session, status } = useSession();
@@ -37,15 +38,14 @@ export default function SocketProvider() {
 		)
 			return;
 
-		const handleGetGames = async () => {
-			const res = await fetch("/api/games");
+		// const handleGetGames = async () => {
+		// 	if (!session.user?.id) return;
+		// 	const games = await getGamesFromUserId(session.user?.id);
 
-			const { games } = await res.json();
+		// 	setGames(games);
+		// }
 
-			setGames(games);
-		}
-
-		handleGetGames();
+		// handleGetGames();
 
 		if (!socket.connected) {
 			socket.auth = {

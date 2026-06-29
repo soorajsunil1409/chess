@@ -215,10 +215,14 @@ export default function Navbar({
 								const Icon =
 									item.icon;
 
+								let href = item.href;
+
+								if (item.name === "Profile") href = `/profile/${session.user?.id}`
+
 								return (
 									<Link
 										key={item.href}
-										href={item.href}
+										href={href}
 										className={`flex items-center gap-3 rounded-xl px-4 py-3 transition ${pathname ===
 											item.href
 											? "bg-zinc-800 text-white"

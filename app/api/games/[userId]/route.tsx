@@ -1,20 +1,26 @@
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { gamesTable } from "@/db/schema";
 import { and, eq, or } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-export const GET = async () => {
-	const session = await auth();
-
-	if (!session?.user?.id) {
-		console.log(session, "SDf");
-		return NextResponse.json(
-			{ error: "Unauthorized" },
-			{ status: 400 }
-		);
+export const GET = async (
+	request: Request,
+	{
+		params
+	}: {
+		params: Promise<{
+			userId: string;
+		}>
 	}
-	const userId = session.user.id;
+) => {
+	const { userId } = await params;
+
+	if (!userId) {
+		return NextResponse.json(
+			{ error: "User does not exist" },
+			{ status: 404 }
+		)
+	}
 
 	const userGames = await db
 		.select()
@@ -30,7 +36,7 @@ export const GET = async () => {
 		)
 
 	return NextResponse.json(
-		{games: userGames},
-		{status: 200}
+		{ games: userGames },
+		{ status: 200 }
 	);
 };

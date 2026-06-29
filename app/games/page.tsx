@@ -1,10 +1,15 @@
-"use client"
-
+import { auth } from "@/auth";
 import RecentGamesWidget from "@/components/RecentGamesWidget";
-import { useGamesStore } from "@/store/gamesStore";
+import { getGamesFromUserId } from "@/lib/api/getGames";
 
-const GamesPage = () => {
-	const games = useGamesStore((state) => state.games);
+const GamesPage = async () => {
+	const session = await auth();
+
+	if (!session?.user?.id) {
+		return <div>User does not exist</div>
+	}
+
+	const games = await getGamesFromUserId(session.user.id);
 
 	return (
 		<RecentGamesWidget games={games} />

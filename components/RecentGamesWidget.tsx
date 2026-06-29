@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
 import { Chess } from "chess.js";
-import { useRouter } from "next/navigation";
 import { DbGameState } from "@/lib/socket/stores/games";
+import Link from "next/link";
 
 type Props = {
 	games: DbGameState[];
@@ -19,15 +19,19 @@ const RecentGamesWidget = ({
 	maxGames,
 	className = "",
 }: Props) => {
-	const router = useRouter();
 
-	const displayGames = maxGames
+	const displayGames = (maxGames
 		? games.slice(0, maxGames)
-		: games;
+		: games
+	).sort(
+		(a, b) =>
+			(new Date(b.endedAt ?? 0).getTime()) -
+			(new Date(a.endedAt ?? 0).getTime())
+	);
 
 	return (
 		<div
-			className={`flex h-full min-h-0 flex-col rounded-xl border border-zinc-800 bg-[#181818] overflow-hidden ${className}`}
+			className={`flex h-full min-h-0 flex-col bg-[#090909] overflow-hidden ${className}`}
 		>
 			{showHeader && (
 				<div className="border-b border-zinc-800 px-6 py-4">
@@ -81,16 +85,11 @@ const RecentGamesWidget = ({
 
 						{displayGames.map((game, index) => {
 							const chess = new Chess();
-
 							chess.loadPgn(game.pgn);
 
-							const moves = Math.ceil(
-								chess.history().length / 2
-							);
+							const moves = Math.ceil(chess.history().length / 2);
 
-							const date = new Date(
-								game.startedAt
-							).toLocaleDateString(
+							const date = new Date(game.startedAt).toLocaleDateString(
 								"en-IN",
 								{
 									day: "numeric",
@@ -109,59 +108,51 @@ const RecentGamesWidget = ({
 							return (
 								<tr
 									key={game.id}
-									onClick={() =>
-										router.push(`/review/${game.id}`)
-									}
-									className={`cursor-pointer border-b border-zinc-800 transition hover:bg-zinc-800 ${index % 2 === 0
-										? "bg-[#181818]"
-										: "bg-[#1d1d1d]"
+									className={`border-b border-zinc-800 transition hover:bg-zinc-800 ${index % 2 === 0 ? "bg-[#181818]" : "bg-[#1d1d1d]"
 										}`}
 								>
-									<td className="px-5 py-4">
-										<div className="flex flex-col gap-2">
+									<td colSpan={5} className="p-0">
+										<Link
+											href={`/review/${game.id}`}
+											className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center"
+										>
+											<div className="px-5 py-4">
+												<div className="flex flex-col gap-2">
+													<div className="flex items-center gap-3">
+														<div className="h-2.5 w-2.5 rounded-sm bg-white" />
+														<span className="font-medium text-white">
+															{game.whitePlayerUsername}
+														</span>
+													</div>
 
-											<div className="flex items-center gap-3">
-
-												<div className="h-2.5 w-2.5 rounded-sm bg-white" />
-
-												<span className="font-medium text-white">
-													{game.whitePlayerUsername}
-												</span>
-
+													<div className="flex items-center gap-3">
+														<div className="h-2.5 w-2.5 rounded-sm bg-zinc-500" />
+														<span className="font-medium text-zinc-300">
+															{game.blackPlayerUsername}
+														</span>
+													</div>
+												</div>
 											</div>
 
-											<div className="flex items-center gap-3">
-
-												<div className="h-2.5 w-2.5 rounded-sm bg-zinc-500" />
-
-												<span className="font-medium text-zinc-300">
-													{game.blackPlayerUsername}
-												</span>
-
+											<div className="px-5 py-4 text-center font-semibold text-white">
+												{result}
 											</div>
 
-										</div>
-									</td>
+											<div className="px-5 py-4 text-center text-zinc-300">
+												{moves}
+											</div>
 
-									<td className="px-5 py-4 text-center font-semibold text-white">
-										{result}
-									</td>
+											<div className="px-5 py-4 text-center text-zinc-400">
+												{game.result
+													? game.result.charAt(0).toUpperCase() +
+													game.result.slice(1)
+													: "-"}
+											</div>
 
-									<td className="px-5 py-4 text-center text-zinc-300">
-										{moves}
-									</td>
-
-									<td className="px-5 py-4 text-center text-zinc-400">
-										{game.result
-											? game.result
-												.charAt(0)
-												.toUpperCase() +
-											game.result.slice(1)
-											: "-"}
-									</td>
-
-									<td className="px-5 py-4 text-right text-zinc-400">
-										{date}
+											<div className="px-5 py-4 text-right text-zinc-400">
+												{date}
+											</div>
+										</Link>
 									</td>
 								</tr>
 							);
