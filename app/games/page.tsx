@@ -12,7 +12,7 @@ const GamesPage = async () => {
 	const games = await getGamesFromUserId(session.user.id);
 
 	return (
-		<RecentGamesWidget games={games} />
+		<RecentGamesWidget games={games} username={session.user.name!} />
 	);
 }
 

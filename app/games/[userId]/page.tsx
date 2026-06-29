@@ -1,5 +1,6 @@
 import RecentGamesWidget from "@/components/RecentGamesWidget";
 import { getGamesFromUserId } from "@/lib/api/getGames";
+import { getUserfromUserId } from "@/lib/api/getUser";
 
 const IndividualGamesPage = async ({ params }: {
 	params: Promise<{
@@ -8,14 +9,15 @@ const IndividualGamesPage = async ({ params }: {
 }) => {
 	const { userId } = await params;
 
+	const user = await getUserfromUserId(userId);
 	const games = await getGamesFromUserId(userId);
 
-	if (!games) {
+	if (!games || !user) {
 		return <div>User not found</div>
 	}
 
 	return (
-		<RecentGamesWidget games={games} />
+		<RecentGamesWidget games={games} username={user.username} />
 	);
 }
 

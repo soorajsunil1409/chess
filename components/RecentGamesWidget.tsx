@@ -7,6 +7,7 @@ import Link from "next/link";
 type Props = {
 	games: DbGameState[];
 	title?: string;
+	username?: string;
 	showHeader?: boolean;
 	maxGames?: number;
 	className?: string;
@@ -14,7 +15,8 @@ type Props = {
 
 const RecentGamesWidget = ({
 	games,
-	title = "Recent Games",
+	title = "Games History",
+	username = "",
 	showHeader = true,
 	maxGames,
 	className = "",
@@ -40,7 +42,7 @@ const RecentGamesWidget = ({
 					</h2>
 
 					<p className="text-sm text-zinc-500">
-						Click a game to review it.
+						Viewing games played by {username}.
 					</p>
 				</div>
 			)}
@@ -120,14 +122,24 @@ const RecentGamesWidget = ({
 												<div className="flex flex-col gap-2">
 													<div className="flex items-center gap-3">
 														<div className="h-2.5 w-2.5 rounded-sm bg-white" />
-														<span className="font-medium text-white">
+														<span
+															className="font-medium text-white"
+															style={{
+																fontWeight: game.whitePlayerUsername === username ? "bold" : "normal"
+															}}
+														>
 															{game.whitePlayerUsername}
 														</span>
 													</div>
 
 													<div className="flex items-center gap-3">
 														<div className="h-2.5 w-2.5 rounded-sm bg-zinc-500" />
-														<span className="font-medium text-zinc-300">
+														<span
+															className="font-medium text-zinc-300"
+															style={{
+																fontWeight: game.blackPlayerUsername === username ? "bold" : "normal"
+															}}
+														>
 															{game.blackPlayerUsername}
 														</span>
 													</div>
