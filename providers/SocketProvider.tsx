@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket/socket";
 import { useOnlineStore } from "@/store/onlineStore";
 import { Challenge, useChallengeStore } from "@/store/challengeStore";
 import { useRouter } from "next/navigation";

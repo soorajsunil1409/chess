@@ -1,7 +1,7 @@
 import { Chess, Color, Move, PieceSymbol, Square } from "chess.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameState } from "@/lib/socket/stores/games";
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket/socket";
 import CapturedPiecesWidget from "../CapturedPiecesWidget";
 import BoardPlayspace from "./BoardPlayspace";
 

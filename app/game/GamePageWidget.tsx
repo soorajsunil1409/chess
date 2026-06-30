@@ -3,7 +3,7 @@
 import BoardWidget from "@/components/board/BoardWidget";
 import DetailsSidebar from "@/components/detailsBar/DetailsBar";
 import GameActions from "@/components/detailsBar/GameActions";
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket/socket";
 import { GameState } from "@/lib/socket/stores/games";
 import { Check, X } from "lucide-react";
 import { useSession } from "next-auth/react";

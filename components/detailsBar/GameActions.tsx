@@ -1,4 +1,4 @@
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket/socket";
 import { GameState } from "@/lib/socket/stores/games";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";

@@ -1,4 +1,4 @@
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket/socket";
 import { Challenge, useChallengeStore } from "@/store/challengeStore";
 import { Bell, Check, Mail, Menu, Search, X } from "lucide-react";
 import { Session } from "next-auth";

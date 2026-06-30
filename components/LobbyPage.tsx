@@ -1,4 +1,4 @@
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket/socket";
 import { useOnlineStore } from "@/store/onlineStore";
 import { useSession } from "next-auth/react";
 
