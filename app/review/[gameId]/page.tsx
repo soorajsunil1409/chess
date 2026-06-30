@@ -1,4 +1,4 @@
-import { getGameFromGameId } from "@/lib/api/getGames";
+import { getGameFromGameId } from "@/lib/db/getGames";
 import GameReviewWidget from "../GameReviewWidget";
 
 const GameReviewPage = async ({ params }: {

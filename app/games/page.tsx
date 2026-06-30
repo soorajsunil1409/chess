@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import RecentGamesWidget from "@/components/RecentGamesWidget";
-import { getGamesFromUserId } from "@/lib/api/getGames";
+import { getGamesFromUserId } from "@/lib/db/getGames";
 
 const GamesPage = async () => {
 	const session = await auth();

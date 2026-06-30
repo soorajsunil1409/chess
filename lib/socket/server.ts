@@ -26,6 +26,8 @@ initializeGames()
 io.on("connection", (socket) => {
 	const { userId, username } = socket.handshake.auth;
 
+	console.log(username);
+
 	if (!userId) {
 		socket.disconnect();
 		return;

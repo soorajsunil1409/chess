@@ -7,7 +7,7 @@ import { useOnlineStore } from "@/store/onlineStore";
 import { Challenge, useChallengeStore } from "@/store/challengeStore";
 import { useRouter } from "next/navigation";
 import { useGamesStore } from "@/store/gamesStore";
-import { getGamesFromUserId } from "@/lib/api/getGames";
+// import { getGamesFromUserId } from "@/lib/db/getGames";
 
 export default function SocketProvider() {
 	const { data: session, status } = useSession();
@@ -21,8 +21,9 @@ export default function SocketProvider() {
 	useEffect(() => {
 		const handlePlayers = (players: any[]) => {
 			setPlayers(players);
+			console.log("players");
 		};
-
+		
 		socket.on("players:online", handlePlayers);
 
 		return () => {

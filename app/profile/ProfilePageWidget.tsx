@@ -5,7 +5,7 @@ import RecentGamesWidget from "@/components/RecentGamesWidget";
 import Link from "next/link";
 import { useMemo } from "react";
 import { DbGameState } from "@/lib/socket/stores/games";
-import { TUser } from "@/lib/api/getUser";
+import { TUser } from "@/lib/db/getUser";
 import ProfileSkeleton from "./ProfileSkeleton";
 
 const ProfilePageWidget = ({

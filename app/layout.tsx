@@ -4,7 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import Providers from "./providers";
 import SocketProvider from "@/providers/SocketProvider";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/navbar/Navbar";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",

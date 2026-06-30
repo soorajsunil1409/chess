@@ -1,6 +1,6 @@
-import { getUserfromUserId } from "@/lib/api/getUser";
+import { getUserfromUserId } from "@/lib/db/getUser";
 import ProfilePageWidget from "../ProfilePageWidget";
-import { getGamesFromUserId } from "@/lib/api/getGames";
+import { getGamesFromUserId } from "@/lib/db/getGames";
 
 const ProfilePage = async ({ params }: {
 	params: Promise<{

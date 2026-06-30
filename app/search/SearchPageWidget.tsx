@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { TUser } from "@/lib/api/getUser";
+import { TUser } from "@/lib/db/getUser";
 
 const SearchPageWidget = ({
 	users,

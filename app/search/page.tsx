@@ -1,4 +1,4 @@
-import { getUsersFromSearchString } from "@/lib/api/getUser";
+import { getUsersFromSearchString } from "@/lib/db/getUser";
 import { redirect } from "next/navigation";
 import SearchPageWidget from "./SearchPageWidget";
 
