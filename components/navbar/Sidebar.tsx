@@ -95,7 +95,7 @@ const Sidebar = ({
 									key={item.href}
 									href={href}
 									className={`flex items-center gap-3 rounded-xl px-4 py-3 transition ${pathname ===
-										item.href
+										href
 										? "bg-zinc-800 text-white"
 										: "text-zinc-400 hover:bg-zinc-900 hover:text-white"
 										}`}
