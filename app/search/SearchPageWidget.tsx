@@ -115,7 +115,8 @@ const SearchPageWidget = ({
 										View Profile
 									</Link>
 
-									<div
+									<button
+										disabled={sendingRequest}
 										onClick={() => handleSendFriendRequest(user.id, user.username)}
 										className="p-1 rounded-md cursor-pointer"
 										style={{
@@ -123,7 +124,7 @@ const SearchPageWidget = ({
 										}}
 									>
 										<UserPlus2 color="black" />
-									</div>
+									</button>
 
 								</div>
 

@@ -36,14 +36,26 @@ const FriendRequestDropDown = () => {
 	}, []);
 
 	const acceptFriendRequest = (request: FriendRequest) => {
-		socket.emit("friend_request:accept", request.id);
 		setMessageOpen(false);
+
+		socket.emit("friend_request:accept",
+			{ requestId: request.id },
+			(response: { success: boolean }) => {
+				if (response.success === true) {
+					toast.success("Request Accepted");
+				} else {
+					toast.error("Failed to decline the request");
+				}
+			}
+		);
 	};
 
 	const rejectFriendRequest = (request: FriendRequest) => {
+		setMessageOpen(false);
+		
 		socket.emit("friend_request:decline",
 			{ requestId: request.id },
-			(response: {success: boolean}) => {
+			(response: { success: boolean }) => {
 				if (response.success === true) {
 					toast.success("Request declined");
 				} else {
@@ -51,8 +63,6 @@ const FriendRequestDropDown = () => {
 				}
 			}
 		);
-		
-		setMessageOpen(false);
 	};
 
 	return (

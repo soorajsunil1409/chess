@@ -7,9 +7,9 @@ import { useOnlineStore } from "@/store/onlineStore";
 import { Challenge, useChallengeStore } from "@/store/challengeStore";
 import { useRouter } from "next/navigation";
 import { useGamesStore } from "@/store/gamesStore";
-import { toast } from "sonner";
 import { FriendRequest } from "@/lib/socket/stores/friends";
 import { useFriendRequestStore } from "@/store/friendRequestStore";
+import { toast } from "sonner";
 // import { getGamesFromUserId } from "@/lib/db/getGames";
 
 export default function SocketProvider() {
@@ -41,10 +41,18 @@ export default function SocketProvider() {
 			setFriendRequests(friendRequests);
 		}
 
-		socket.on("friend_request:update", handleUpdateFriendRequest);
+		const handleAcceptFriendRequest = (friendRequest: FriendRequest) => {
+			console.log(friendRequest);
+			// TODO Update FriendStore
+			toast.success(`${friendRequest.toUsername} accepted your friend request.`);
+		}
 
+		socket.on("friend_request:update", handleUpdateFriendRequest);
+		socket.on("friend_request:accepted", handleAcceptFriendRequest);
+		
 		return () => {
 			socket.off("friend_request:update", handleUpdateFriendRequest);
+			socket.off("friend_request:accepted", handleAcceptFriendRequest);
 		}
 	}, []);
 

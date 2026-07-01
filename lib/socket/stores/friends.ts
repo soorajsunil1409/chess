@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { friendRequests } from "@/db/schema";
+import { friendRequests, friends } from "@/db/schema";
 import { and, eq, or } from "drizzle-orm";
 
 export type FriendRequest = {
@@ -187,24 +187,54 @@ export class FriendsStore {
 		}
 	}
 
-	async acceptRequest(fromId: string, toId: string) {
+	async acceptRequest(requestId: string) {
 		try {
+			const request = await db.query.friendRequests.findFirst({
+				where: (fr, { eq }) =>
+					eq(fr.id, requestId),
+				with: {
+					fromUser: true,
+					toUser: true
+				}
+			});
+
+			if (!request) return null;
+
 			await db
 				.update(friendRequests)
 				.set({
 					status: "accepted",
 					updatedAt: new Date(),
 				})
-				.where(
-					and(
-						eq(friendRequests.fromUserId, fromId),
-						eq(friendRequests.toUserId, toId)
-					)
-				);
+				.where(eq(friendRequests.id, requestId));
 
-			this.removeRequest(fromId, toId);
+			const user1Id =
+				request.fromUserId < request.toUserId
+					? request.fromUserId
+					: request.toUserId;
 
-			return true;
+			const user2Id =
+				request.fromUserId < request.toUserId
+					? request.toUserId
+					: request.fromUserId;
+
+			await db.insert(friends).values({
+				user1Id,
+				user2Id,
+			});
+
+			this.removeRequest(request.fromUserId, request.toUserId);
+
+			return {
+				id: request.id,
+				status: request.status,
+				createdAt: request.createdAt,
+				fromUserId: request.fromUserId,
+				toUserId: request.toUserId,
+				updatedAt: request.updatedAt,
+				fromUsername: request.fromUser.username,
+				toUsername: request.toUser.username
+			};
 		} catch (err) {
 			console.error(err);
 			return false;
@@ -214,9 +244,8 @@ export class FriendsStore {
 	async rejectRequest(requestId: string) {
 		try {
 			const request = await db.query.friendRequests.findFirst({
-				where: (fr, { eq }) => {
-					eq(fr.id, requestId);
-				}
+				where: (fr, { eq }) =>
+					eq(fr.id, requestId)
 			});
 
 			if (!request) return null;
