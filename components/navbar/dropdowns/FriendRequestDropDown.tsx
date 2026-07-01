@@ -1,3 +1,5 @@
+import { acceptFriendRequest } from "@/lib/friends/acceptFriendRequest";
+import { rejectFriendRequest } from "@/lib/friends/rejectFriendRequest";
 import { socket } from "@/lib/socket/socket";
 import { FriendRequest } from "@/lib/socket/stores/friends";
 import { useFriendRequestStore } from "@/store/friendRequestStore";
@@ -35,34 +37,28 @@ const FriendRequestDropDown = () => {
 		};
 	}, []);
 
-	const acceptFriendRequest = (request: FriendRequest) => {
+	const handleAcceptFriendRequest = async (request: FriendRequest) => {
 		setMessageOpen(false);
 
-		socket.emit("friend_request:accept",
-			{ requestId: request.id },
-			(response: { success: boolean }) => {
-				if (response.success === true) {
-					toast.success("Request Accepted");
-				} else {
-					toast.error("Failed to decline the request");
-				}
-			}
-		);
+		const res = await acceptFriendRequest(request.id);
+
+		if (res.success) {
+			toast.success("Request accepted");
+		} else {
+			toast.error(res.error ?? "Failed to accept the request");
+		}
 	};
 
-	const rejectFriendRequest = (request: FriendRequest) => {
+	const handleRejectFriendRequest = async (request: FriendRequest) => {
 		setMessageOpen(false);
-		
-		socket.emit("friend_request:decline",
-			{ requestId: request.id },
-			(response: { success: boolean }) => {
-				if (response.success === true) {
-					toast.success("Request declined");
-				} else {
-					toast.error("Failed to decline the request");
-				}
-			}
-		);
+
+		const res = await rejectFriendRequest(request.id);
+
+		if (res.success) {
+			toast.success("Request declined");
+		} else {
+			toast.error(res.error ?? "Failed to decline the request");
+		}
 	};
 
 	return (
@@ -120,7 +116,7 @@ const FriendRequestDropDown = () => {
 
 									<button
 										onClick={() =>
-											acceptFriendRequest(request)
+											handleAcceptFriendRequest(request)
 										}
 										className="rounded-lg bg-green-600 p-2 hover:bg-green-500"
 									>
@@ -129,7 +125,7 @@ const FriendRequestDropDown = () => {
 
 									<button
 										onClick={() =>
-											rejectFriendRequest(request)
+											handleRejectFriendRequest(request)
 										}
 										className="rounded-lg bg-red-600 p-2 hover:bg-red-500"
 									>

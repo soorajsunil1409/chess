@@ -46,7 +46,6 @@ export default function SocketProvider() {
 
 		const handleAcceptFriendRequest = (friend: Friend) => {
 			// console.log(friend);
-			// TODO Update FriendStore
 			addFriend(friend);
 			toast.success(`${friend.user.username} added as friend.`);
 		}

@@ -2,93 +2,26 @@
 
 import Link from "next/link";
 import { TUser } from "@/lib/socket/stores/users";
-import { UserPlus2 } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { socket } from "@/lib/socket/socket";
+import { Check, UserPlus2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useFriendsStore } from "@/store/friendsStore";
 import { sendFriendRequest } from "@/lib/friends/sendFriendRequest";
+import { useFriendRequestStore } from "@/store/friendRequestStore";
+import { acceptFriendRequest } from "@/lib/friends/acceptFriendRequest";
+import { rejectFriendRequest } from "@/lib/friends/rejectFriendRequest";
 
 const SearchPageWidget = ({
 	users,
 }: {
 	users: TUser[];
 }) => {
-	const { data: session, status } = useSession()
 	const [sendingRequest, setSendingRequest] = useState<boolean>(false);
 
+	const friendRequests = useFriendRequestStore((state) => state.friendRequests)
 	const friendIds = useFriendsStore((state) => state.friendIds);
-
 	const friends = users.filter((user) => friendIds.has(user.id));
 	const otherPlayers = users.filter((user) => !friendIds.has(user.id));
-
-	const renderUserRow = (
-		user: TUser,
-		index: number,
-		total: number,
-		isFriend: boolean
-	) => (
-		<div
-			key={user.id}
-			className={`flex items-center justify-between px-6 py-5 transition hover:bg-zinc-800 ${index !== total - 1 ? "border-b border-zinc-800" : ""
-				}`}
-		>
-			<div className="flex items-center gap-4">
-				<div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-700 text-lg font-bold text-white">
-					{user.username.charAt(0).toUpperCase()}
-				</div>
-
-				<div className="flex flex-col gap-1">
-					<span className="text-lg font-semibold text-white">
-						{user.username}
-					</span>
-
-					<span className="text-sm text-zinc-400">
-						{user.email}
-					</span>
-				</div>
-			</div>
-
-			<div className="flex items-center gap-6">
-				<div className="hidden flex-col items-end text-sm md:flex">
-					<span className="text-zinc-500">Joined</span>
-
-					<span className="text-zinc-300">
-						{new Date(user.createdAt).toLocaleDateString(
-							"en-US",
-							{
-								month: "short",
-								year: "numeric",
-							}
-						)}
-					</span>
-				</div>
-
-				<Link
-					href={`/profile/${user.id}`}
-					className="rounded-lg border border-zinc-700 bg-[#111111] px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
-				>
-					View Profile
-				</Link>
-
-				{!isFriend && (
-					<button
-						disabled={sendingRequest}
-						onClick={() => handleSendFriendRequest(user.id)}
-						className="rounded-md p-1"
-						style={{
-							backgroundColor: sendingRequest
-								? "gray"
-								: "white",
-						}}
-					>
-						<UserPlus2 color="black" />
-					</button>
-				)}
-			</div>
-		</div>
-	);
 
 	// TODO same for challenges
 	const handleSendFriendRequest = async (toId: string) => {
@@ -105,6 +38,111 @@ const SearchPageWidget = ({
 		} else {
 			toast.error(res.error);
 		}
+	}
+
+	const handleAcceptFriendRequest = async (requestId: string) => {
+		const res = await acceptFriendRequest(requestId);
+
+		if (res.success) {
+			toast.success("Request accepted");
+		} else {
+			toast.error(res.error ?? "Failed to accept the request");
+		}
+	};
+
+	const handleRejectFriendRequest = async (requestId: string) => {
+		const res = await rejectFriendRequest(requestId);
+
+		if (res.success) {
+			toast.success("Request declined");
+		} else {
+			toast.error(res.error ?? "Failed to decline the request");
+		}
+	};
+
+	const renderUserRow = (
+		user: TUser,
+		index: number,
+		total: number,
+		isFriend: boolean
+	) => {
+		const requestExists = friendRequests.find((request) => request.fromUserId === user.id);
+		// console.log(requestExists);
+
+		return (
+			<div
+				key={user.id}
+				className={`flex items-center justify-between px-6 py-5 transition hover:bg-zinc-800 ${index !== total - 1 ? "border-b border-zinc-800" : ""
+					}`}
+			>
+				<div className="flex items-center gap-4">
+					<div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-700 text-lg font-bold text-white">
+						{user.username.charAt(0).toUpperCase()}
+					</div>
+
+					<div className="flex flex-col gap-1">
+						<span className="text-lg font-semibold text-white">
+							{user.username}
+						</span>
+
+						<span className="text-sm text-zinc-400">
+							{user.email}
+						</span>
+					</div>
+				</div>
+
+				<div className="flex items-center gap-6">
+					<div className="hidden flex-col items-end text-sm md:flex">
+						<span className="text-zinc-500">Joined</span>
+
+						<span className="text-zinc-300">
+							{new Date(user.createdAt).toLocaleDateString(
+								"en-US",
+								{
+									month: "short",
+									year: "numeric",
+								}
+							)}
+						</span>
+					</div>
+
+					<Link
+						href={`/profile/${user.id}`}
+						className="rounded-lg border border-zinc-700 bg-[#111111] px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+					>
+						View Profile
+					</Link>
+
+					{!isFriend && (
+						requestExists ? (
+							<div className="flex items-center gap-2">
+								<button
+									onClick={() => handleAcceptFriendRequest(requestExists.id)}
+									className="rounded-lg bg-green-600 p-2 transition hover:bg-green-500"
+								>
+									<Check size={16} />
+								</button>
+
+								<button
+									onClick={() => handleRejectFriendRequest(requestExists.id)}
+									className="rounded-lg bg-red-600 p-2 transition hover:bg-red-500"
+								>
+									<X size={16} />
+								</button>
+							</div>
+						) : (
+							<button
+								disabled={sendingRequest}
+								onClick={() => handleSendFriendRequest(user.id)}
+								className="rounded-md bg-white p-1 disabled:bg-gray-500"
+							>
+								<UserPlus2 color="black" />
+							</button>
+						)
+					)}
+				</div>
+			</div>
+		)
 	}
 
 	return (

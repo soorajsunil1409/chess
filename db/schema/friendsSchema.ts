@@ -2,11 +2,6 @@ import { index, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex } from
 import { users } from "./userSchema";
 import { relations } from "drizzle-orm";
 
-export const friendRequestStatusEnum = pgEnum(
-	"friend_request_status",
-	["pending", "accepted", "declined"]
-);
-
 export const friendRequests = pgTable(
 	"friend_requests",
 	{
@@ -19,10 +14,6 @@ export const friendRequests = pgTable(
 		toUserId: text("to_user_id")
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
-
-		status: friendRequestStatusEnum("status")
-			.notNull()
-			.default("pending"),
 
 		createdAt: timestamp("created_at")
 			.defaultNow()

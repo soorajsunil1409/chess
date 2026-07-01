@@ -8,7 +8,6 @@ export type FriendRequest = {
 	fromUsername: string;
 	toUserId: string;
 	toUsername: string;
-	status: "pending" | "accepted" | "declined";
 	createdAt: Date;
 	updatedAt: Date;
 };
@@ -29,8 +28,6 @@ export class FriendsStore {
 
 	async init() {
 		const requests = await db.query.friendRequests.findMany({
-			where: (friendRequests, { eq }) =>
-				eq(friendRequests.status, "pending"),
 			with: {
 				fromUser: true,
 				toUser: true
@@ -43,7 +40,6 @@ export class FriendsStore {
 				fromUsername: request.fromUser.username,
 				toUserId: request.toUserId,
 				toUsername: request.toUser.username,
-				status: request.status,
 				createdAt: request.createdAt,
 				updatedAt: request.updatedAt,
 			});
@@ -89,6 +85,7 @@ export class FriendsStore {
 		try {
 			if (fromId === toId) return null;
 
+			// Already pending (cache)
 			if (
 				this.getPendingRequest(fromId, toId) ||
 				this.getPendingRequest(toId, fromId)
@@ -96,75 +93,32 @@ export class FriendsStore {
 				return null;
 			}
 
-			const existing = await db.query.friendRequests.findFirst({
-				where: (fr, { or, eq, and }) =>
+			// Already friends
+			const friendship = await db.query.friends.findFirst({
+				where: (f, { or, and, eq }) =>
 					or(
 						and(
-							eq(fr.fromUserId, fromId),
-							eq(fr.toUserId, toId)
+							eq(f.user1Id, fromId),
+							eq(f.user2Id, toId)
 						),
 						and(
-							eq(fr.fromUserId, toId),
-							eq(fr.toUserId, fromId)
+							eq(f.user1Id, toId),
+							eq(f.user2Id, fromId)
 						)
 					),
-				with: {
-					fromUser: {
-						columns: {
-							username: true,
-						},
-					},
-					toUser: {
-						columns: {
-							username: true,
-						},
-					},
-				},
 			});
 
-			if (existing) {
-				if (existing.status === "pending") {
-					return null;
-				}
-
-				if (existing.status === "accepted") {
-					return null;
-				}
-
-				// existing.status === "declined"
-				await db
-					.update(friendRequests)
-					.set({
-						status: "pending",
-						updatedAt: new Date(),
-					})
-					.where(eq(friendRequests.id, existing.id));
-
-				const request: FriendRequest = {
-					id: existing.id,
-					fromUserId: existing.fromUserId,
-					fromUsername: existing.fromUser.username,
-					toUserId: existing.toUserId,
-					toUsername: existing.toUser.username,
-					status: "pending",
-					createdAt: existing.createdAt,
-					updatedAt: new Date(),
-				};
-
-				this.addRequest(request);
-
-				return request;
-			}
+			if (friendship) return null;
 
 			const [fromUser, toUser] = await Promise.all([
 				db.query.users.findFirst({
-					where: (users, { eq }) => eq(users.id, fromId),
+					where: (u, { eq }) => eq(u.id, fromId),
 					columns: {
 						username: true,
 					},
 				}),
 				db.query.users.findFirst({
-					where: (users, { eq }) => eq(users.id, toId),
+					where: (u, { eq }) => eq(u.id, toId),
 					columns: {
 						username: true,
 					},
@@ -179,12 +133,17 @@ export class FriendsStore {
 				fromUsername: fromUser.username,
 				toUserId: toId,
 				toUsername: toUser.username,
-				status: "pending",
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			};
 
-			await db.insert(friendRequests).values(request);
+			await db.insert(friendRequests).values({
+				id: request.id,
+				fromUserId: request.fromUserId,
+				toUserId: request.toUserId,
+				createdAt: request.createdAt,
+				updatedAt: request.updatedAt,
+			});
 
 			this.addRequest(request);
 
@@ -209,11 +168,7 @@ export class FriendsStore {
 			if (!request) return null;
 
 			await db
-				.update(friendRequests)
-				.set({
-					status: "accepted",
-					updatedAt: new Date(),
-				})
+				.delete(friendRequests)
 				.where(eq(friendRequests.id, requestId));
 
 			const user1Id =
@@ -235,7 +190,6 @@ export class FriendsStore {
 
 			return {
 				id: request.id,
-				status: request.status,
 				createdAt: request.createdAt,
 				fromUserId: request.fromUserId,
 				toUserId: request.toUserId,
@@ -259,11 +213,7 @@ export class FriendsStore {
 			if (!request) return null;
 
 			await db
-				.update(friendRequests)
-				.set({
-					status: "declined",
-					updatedAt: new Date(),
-				})
+				.delete(friendRequests)
 				.where(eq(friendRequests.id, requestId));
 
 			this.removeRequest(request.fromUserId, request.toUserId);
