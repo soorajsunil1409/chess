@@ -5,7 +5,9 @@ import { and, eq, or } from "drizzle-orm";
 export type FriendRequest = {
 	id: string;
 	fromUserId: string;
+	fromUsername: string;
 	toUserId: string;
+	toUsername: string;
 	status: "pending" | "accepted" | "declined";
 	createdAt: Date;
 	updatedAt: Date;
@@ -18,13 +20,25 @@ export class FriendsStore {
 	>();
 
 	async init() {
-		const requests = await db
-			.select()
-			.from(friendRequests)
-			.where(eq(friendRequests.status, "pending"));
-
+		const requests = await db.query.friendRequests.findMany({
+			where: (friendRequests, { eq }) =>
+				eq(friendRequests.status, "pending"),
+			with: {
+				fromUser: true,
+				toUser: true
+			}
+		})
 		for (const request of requests) {
-			this.addRequest(request);
+			this.addRequest({
+				id: request.id,
+				fromUserId: request.fromUserId,
+				fromUsername: request.fromUser.username,
+				toUserId: request.toUserId,
+				toUsername: request.toUser.username,
+				status: request.status,
+				createdAt: request.createdAt,
+				updatedAt: request.updatedAt,
+			});
 		}
 	}
 
@@ -93,10 +107,29 @@ export class FriendsStore {
 
 			if (existing.length > 0) return null;
 
+			const [fromUser, toUser] = await Promise.all([
+				db.query.users.findFirst({
+					where: (users, { eq }) => eq(users.id, fromId),
+					columns: {
+						username: true,
+					},
+				}),
+				db.query.users.findFirst({
+					where: (users, { eq }) => eq(users.id, toId),
+					columns: {
+						username: true,
+					},
+				}),
+			]);
+
+			if (!fromUser || !toUser) return null;
+
 			const request: FriendRequest = {
 				id: crypto.randomUUID(),
 				fromUserId: fromId,
+				fromUsername: fromUser.username,
 				toUserId: toId,
+				toUsername: toUser.username,
 				status: "pending",
 				createdAt: new Date(),
 				updatedAt: new Date(),

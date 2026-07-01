@@ -86,7 +86,7 @@ const FriendRequestDropDown = () => {
 
 								<div>
 									<div className="font-medium">
-										{request.fromUserId}
+										{request.fromUsername}
 									</div>
 
 									<div className="text-sm text-zinc-400">

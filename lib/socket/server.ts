@@ -8,7 +8,7 @@ import { Server } from "socket.io";
 import { registerChallengeHandlers } from "./handlers/challengeHandler";
 import { onlineUsers } from "./stores/onlineUsers";
 import { initializeGames } from "./utils/gameUtils";
-import { emitChallengesForUser } from "./utils/emitChanges";
+import { emitChallengesForUser, emitFriendRequests } from "./utils/emitChanges";
 import { registerGameHandlers } from "./handlers/gameHandler";
 import { registerFriendsHandlers } from "./handlers/friendsHandler";
 import { FriendsStore } from "./stores/friends";
@@ -48,6 +48,8 @@ io.on("connection", (socket) => {
 	io.emit("players:online", [...onlineUsers.values()]);
 
 	emitChallengesForUser(io, userId);
+
+	emitFriendRequests(io, userId);
 
 	registerChallengeHandlers(io, socket, userId);
 

@@ -1,6 +1,5 @@
 import { Server, Socket } from "socket.io";
 import { friendsStore } from "../server";
-import { onlineUsers } from "../stores/onlineUsers";
 import { emitFriendRequests } from "../utils/emitChanges";
 
 export const registerFriendsHandlers = (
@@ -9,8 +8,6 @@ export const registerFriendsHandlers = (
 	userId: string
 ) => {
 	socket.on("friend_request:send", async ({ targetUserId }, callback) => {
-		console.log(userId, targetUserId);
-
 		const request = await friendsStore.sendRequest(
 			userId,
 			targetUserId
