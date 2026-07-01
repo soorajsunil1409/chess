@@ -7,6 +7,9 @@ import { useOnlineStore } from "@/store/onlineStore";
 import { Challenge, useChallengeStore } from "@/store/challengeStore";
 import { useRouter } from "next/navigation";
 import { useGamesStore } from "@/store/gamesStore";
+import { toast } from "sonner";
+import { FriendRequest } from "@/lib/socket/stores/friends";
+import { useFriendRequestStore } from "@/store/friendRequestStore";
 // import { getGamesFromUserId } from "@/lib/db/getGames";
 
 export default function SocketProvider() {
@@ -15,7 +18,8 @@ export default function SocketProvider() {
 
 	const setPlayers = useOnlineStore((state) => state.setPlayers);
 	const setChallenges = useChallengeStore((state) => state.setChallenges);
-	const setGames = useGamesStore((state) => state.setGames);
+	const setFriendRequests = useFriendRequestStore((state) => state.setFriendRequests);
+	// const setGames = useGamesStore((state) => state.setGames);
 
 	// Listener to update online Players
 	useEffect(() => {
@@ -23,13 +27,26 @@ export default function SocketProvider() {
 			setPlayers(players);
 			console.log("players");
 		};
-		
+
 		socket.on("players:online", handlePlayers);
 
 		return () => {
 			socket.off("players:online", handlePlayers);
 		};
 	}, [setPlayers]);
+
+	// Handle friend requests
+	useEffect(() => {
+		const handleUpdateFriendRequest = (friendRequests: FriendRequest[]) => {
+			setFriendRequests(friendRequests);
+		}
+
+		socket.on("friend_request:update", handleUpdateFriendRequest);
+
+		return () => {
+			socket.off("friend_request:update", handleUpdateFriendRequest);
+		}
+	}, []);
 
 	// On login establish a socket and fetch all the games
 	useEffect(() => {

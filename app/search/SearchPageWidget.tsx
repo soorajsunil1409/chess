@@ -1,13 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { TUser } from "@/lib/db/getUser";
+import { TUser } from "@/lib/socket/stores/users";
+import { UserPlus2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { socket } from "@/lib/socket/socket";
+import { toast } from "sonner";
 
 const SearchPageWidget = ({
 	users,
 }: {
 	users: TUser[];
 }) => {
+	const { data: session, status } = useSession()
+
+	// TODO same for challenges
+	const handleSendFriendRequest = (toId: string, username: string) => {
+		if (!session?.user?.id || toId === "") return;
+
+		socket.emit(
+			"friend_request:send",
+			{ targetUserId: toId },
+			(res: { success: boolean, error?: string }) => {
+				if (res.success) {
+					toast.success("Friend request sent");
+				} else {
+					toast.error(res.error);
+				}
+			}
+		);
+	}
+
 	return (
 		<main className="flex flex-col w-full bg-[#090909] p-6 flex-1 justify-start items-center">
 			<div className="flex w-full max-w-5xl flex-col gap-6">
@@ -32,12 +55,11 @@ const SearchPageWidget = ({
 					<div className="flex flex-col overflow-hidden rounded-xl border border-zinc-800 bg-[#181818]">
 
 						{users.map((user, index) => (
-							<Link
+							<div
 								key={user.id}
-								href={`/profile/${user.id}`}
 								className={`flex items-center justify-between px-6 py-5 transition hover:bg-zinc-800 ${index !== users.length - 1
-										? "border-b border-zinc-800"
-										: ""
+									? "border-b border-zinc-800"
+									: ""
 									}`}
 							>
 
@@ -81,13 +103,23 @@ const SearchPageWidget = ({
 
 									</div>
 
-									<div className="rounded-lg border border-zinc-700 bg-[#111111] px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700">
+									<Link
+										href={`/profile/${user.id}`}
+										className="rounded-lg border border-zinc-700 bg-[#111111] px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+									>
 										View Profile
+									</Link>
+
+									<div
+										onClick={() => handleSendFriendRequest(user.id, user.username)}
+										className="bg-white p-1 rounded-md cursor-pointer"
+									>
+										<UserPlus2 color="black" />
 									</div>
 
 								</div>
 
-							</Link>
+							</div>
 						))}
 
 					</div>

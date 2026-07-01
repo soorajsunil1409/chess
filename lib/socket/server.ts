@@ -10,6 +10,8 @@ import { onlineUsers } from "./stores/onlineUsers";
 import { initializeGames } from "./utils/gameUtils";
 import { emitChallengesForUser } from "./utils/emitChanges";
 import { registerGameHandlers } from "./handlers/gameHandler";
+import { registerFriendsHandlers } from "./handlers/friendsHandler";
+import { FriendsStore } from "./stores/friends";
 
 const httpServer = createServer();
 
@@ -22,6 +24,10 @@ const io = new Server(httpServer, {
 });
 
 initializeGames()
+export const friendsStore = new FriendsStore();
+friendsStore.init();
+
+// Fetch all the db Users;
 
 io.on("connection", (socket) => {
 	const { userId, username } = socket.handshake.auth;
@@ -43,13 +49,11 @@ io.on("connection", (socket) => {
 
 	emitChallengesForUser(io, userId);
 
-	registerChallengeHandlers(
-		io,
-		socket,
-		userId
-	)
+	registerChallengeHandlers(io, socket, userId);
 
 	registerGameHandlers(io, socket, userId);
+
+	registerFriendsHandlers(io, socket, userId);
 
 	socket.on("disconnect", (reason) => {
 		const user = onlineUsers.get(userId);
