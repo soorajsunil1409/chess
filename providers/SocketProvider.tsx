@@ -8,9 +8,10 @@ import { useChallengeStore } from "@/store/challengeStore";
 import { Challenge } from "@/lib/socket/stores/challenges";
 import { useRouter } from "next/navigation";
 import { useGamesStore } from "@/store/gamesStore";
-import { FriendRequest } from "@/lib/socket/stores/friends";
+import { Friend, FriendRequest } from "@/lib/socket/stores/friends";
 import { useFriendRequestStore } from "@/store/friendRequestStore";
 import { toast } from "sonner";
+import { useFriendsStore } from "@/store/friendsStore";
 // import { getGamesFromUserId } from "@/lib/db/getGames";
 
 export default function SocketProvider() {
@@ -20,6 +21,7 @@ export default function SocketProvider() {
 	const setPlayers = useOnlineStore((state) => state.setPlayers);
 	const setChallenges = useChallengeStore((state) => state.setChallenges);
 	const setFriendRequests = useFriendRequestStore((state) => state.setFriendRequests);
+	const addFriend = useFriendsStore((state) => state.addFriend);
 	// const setGames = useGamesStore((state) => state.setGames);
 
 	// Listener to update online Players
@@ -42,10 +44,11 @@ export default function SocketProvider() {
 			setFriendRequests(friendRequests);
 		}
 
-		const handleAcceptFriendRequest = (friendRequest: FriendRequest) => {
-			console.log(friendRequest);
+		const handleAcceptFriendRequest = (friend: Friend) => {
+			// console.log(friend);
 			// TODO Update FriendStore
-			toast.success(`${friendRequest.toUsername} accepted your friend request.`);
+			addFriend(friend);
+			toast.success(`${friend.user.username} added as friend.`);
 		}
 
 		socket.on("friend_request:update", handleUpdateFriendRequest);

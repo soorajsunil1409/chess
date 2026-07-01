@@ -63,12 +63,32 @@ export const registerFriendsHandlers = (
 		emitFriendRequests(io, userId);
 
 		const fromUserOnline = onlineUsers.get(request.fromUserId);
+		const toUserOnline = onlineUsers.get(request.toUserId);
 
-		if (!fromUserOnline) return;
+		if (fromUserOnline) {
+			io.to(fromUserOnline.socketId).emit(
+				"friend_request:accepted",
+				{
+					user: {
+						id: request.toUserId,
+						username: request.toUsername
+					},
+					createdAt: request.createdAt
+				}
+			);
+		}
 
-		io.to(fromUserOnline.socketId).emit(
-			"friend_request:accepted",
-			request
-		);
+		if (toUserOnline) {
+			io.to(toUserOnline.socketId).emit(
+				"friend_request:accepted",
+				{
+					user: {
+						id: request.fromUserId,
+						username: request.fromUsername
+					},
+					createdAt: request.createdAt
+				}
+			);
+		}
 	});
 };

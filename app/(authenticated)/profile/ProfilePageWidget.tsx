@@ -3,10 +3,13 @@
 import { useSession } from "next-auth/react";
 import RecentGamesWidget from "@/components/RecentGamesWidget";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { DbGameState } from "@/lib/socket/stores/games";
 import { TUser } from "@/lib/socket/stores/users";
 import ProfileSkeleton from "./ProfileSkeleton";
+import { useFriendsStore } from "@/store/friendsStore";
+import { sendFriendRequest } from "@/lib/friends/sendFriendRequest";
+import { toast } from "sonner";
 
 const ProfilePageWidget = ({
 	user,
@@ -16,8 +19,26 @@ const ProfilePageWidget = ({
 	games: DbGameState[]
 }) => {
 	const { data: session } = useSession();
+	const [sendingRequest, setSendingRequest] = useState<boolean>(false);
 
 	const isOwnProfile = session?.user?.id === user.id;
+
+	// TODO same for challenges
+	const handleSendFriendRequest = async (toId: string) => {
+		if (!toId) return;
+
+		setSendingRequest(true);
+
+		const res = await sendFriendRequest(toId);
+
+		setSendingRequest(false);
+
+		if (res.success) {
+			toast.success("Friend request sent");
+		} else {
+			toast.error(res.error);
+		}
+	}
 
 	const stats = useMemo(() => {
 		let wins = 0;
@@ -43,6 +64,8 @@ const ProfilePageWidget = ({
 	if (!user) {
 		return <ProfileSkeleton />;
 	}
+
+	const isFriend = useFriendsStore((state) => state.isFriend(user.id))
 
 	return (
 		<main className="flex w-full items-center justify-center p-6 lg:min-h-0 bg-[#090909] flex-col flex-1">
@@ -71,14 +94,25 @@ const ProfilePageWidget = ({
 						</div>
 
 					</div>
-
 					{
-						isOwnProfile &&
-						<button className="rounded-lg border border-zinc-700 bg-[#111111] px-5 py-3 transition hover:bg-zinc-800">
-							Edit Profile
-						</button>
+						!isOwnProfile && (
+							isFriend ? (
+								<button
+									className="rounded-lg border border-zinc-700 bg-[#111111] px-5 py-3 transition hover:bg-zinc-800"
+								>
+									Remove Friend
+								</button>
+							) : (
+								<button
+									disabled={sendingRequest}
+									onClick={() => handleSendFriendRequest(user.id)}
+									className="rounded-lg border border-zinc-700 bg-[#111111] px-5 py-3 transition hover:bg-zinc-800"
+								>
+									Add Friend
+								</button>
+							)
+						)
 					}
-
 				</div>
 
 				<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

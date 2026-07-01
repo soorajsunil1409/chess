@@ -17,7 +17,6 @@ export type Friend = {
 	user: {
 		id: string;
 		username: string;
-		createdAt: string | Date;
 	};
 	createdAt: string | Date;
 };
