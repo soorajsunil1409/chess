@@ -6,6 +6,7 @@ import { UserPlus2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { socket } from "@/lib/socket/socket";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const SearchPageWidget = ({
 	users,
@@ -13,19 +14,23 @@ const SearchPageWidget = ({
 	users: TUser[];
 }) => {
 	const { data: session, status } = useSession()
+	const [sendingRequest, setSendingRequest] = useState<boolean>(false);
 
 	// TODO same for challenges
 	const handleSendFriendRequest = (toId: string, username: string) => {
 		if (!session?.user?.id || toId === "") return;
 
+		setSendingRequest(true);
 		socket.emit(
 			"friend_request:send",
 			{ targetUserId: toId },
 			(res: { success: boolean, error?: string }) => {
 				if (res.success) {
 					toast.success("Friend request sent");
+					setSendingRequest(false);
 				} else {
 					toast.error(res.error);
+					setSendingRequest(false);
 				}
 			}
 		);
@@ -112,7 +117,10 @@ const SearchPageWidget = ({
 
 									<div
 										onClick={() => handleSendFriendRequest(user.id, user.username)}
-										className="bg-white p-1 rounded-md cursor-pointer"
+										className="p-1 rounded-md cursor-pointer"
+										style={{
+											backgroundColor: sendingRequest ? "gray" : "white"
+										}}
 									>
 										<UserPlus2 color="black" />
 									</div>

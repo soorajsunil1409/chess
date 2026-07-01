@@ -3,6 +3,7 @@ import { FriendRequest } from "@/lib/socket/stores/friends";
 import { useFriendRequestStore } from "@/store/friendRequestStore";
 import { Check, Mail, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 const FriendRequestDropDown = () => {
 	const friendRequests = useFriendRequestStore((state) => state.friendRequests);
@@ -40,7 +41,17 @@ const FriendRequestDropDown = () => {
 	};
 
 	const rejectFriendRequest = (request: FriendRequest) => {
-		socket.emit("friend_request:reject", request.id);
+		socket.emit("friend_request:decline",
+			{ requestId: request.id },
+			(response: {success: boolean}) => {
+				if (response.success === true) {
+					toast.success("Request declined");
+				} else {
+					toast.error("Failed to decline the request");
+				}
+			}
+		);
+		
 		setMessageOpen(false);
 	};
 
