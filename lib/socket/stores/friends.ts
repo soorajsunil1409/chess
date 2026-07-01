@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { friendRequests, friends } from "@/db/schema";
-import { and, eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export type FriendRequest = {
 	id: string;
@@ -11,6 +11,15 @@ export type FriendRequest = {
 	status: "pending" | "accepted" | "declined";
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export type Friend = {
+	user: {
+		id: string;
+		username: string;
+		createdAt: string | Date;
+	};
+	createdAt: string | Date;
 };
 
 export class FriendsStore {

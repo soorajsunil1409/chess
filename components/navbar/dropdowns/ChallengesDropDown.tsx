@@ -1,5 +1,6 @@
 import { socket } from "@/lib/socket/socket";
-import { Challenge, useChallengeStore } from "@/store/challengeStore";
+import { useChallengeStore } from "@/store/challengeStore";
+import { Challenge } from "@/lib/socket/stores/challenges";
 import { Bell, Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 

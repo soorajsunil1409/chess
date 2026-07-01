@@ -1,13 +1,5 @@
+import { Challenge } from "@/lib/socket/stores/challenges";
 import { create } from "zustand";
-
-export type Challenge = {
-	challengeId: string;
-	fromUserId: string;
-	fromUsername: string;
-	toUserId: string;
-	toUsername: string;
-	createdAt: number;
-};
 
 interface ChallengeStore {
 	challenges: Challenge[];
