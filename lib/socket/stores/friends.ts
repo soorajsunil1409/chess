@@ -21,10 +21,17 @@ export type Friend = {
 };
 
 export class FriendsStore {
-	public friendRequests = new Map<
+	public incomingRequests = new Map<
 		string,
 		Map<string, FriendRequest>
 	>();
+
+	public outgoingRequests = new Map<
+		string,
+		Map<string, FriendRequest>
+	>();
+
+	private requestsById = new Map<string, FriendRequest>();
 
 	async init() {
 		const requests = await db.query.friendRequests.findMany({
@@ -47,38 +54,64 @@ export class FriendsStore {
 	}
 
 	private addRequest(request: FriendRequest) {
-		let incoming = this.friendRequests.get(request.toUserId);
+		let incoming = this.incomingRequests.get(request.toUserId);
 
 		if (!incoming) {
 			incoming = new Map();
-			this.friendRequests.set(request.toUserId, incoming);
+			this.incomingRequests.set(request.toUserId, incoming);
 		}
 
 		incoming.set(request.fromUserId, request);
+
+		let outgoing = this.outgoingRequests.get(request.fromUserId);
+
+		if (!outgoing) {
+			outgoing = new Map();
+			this.outgoingRequests.set(request.fromUserId, outgoing);
+		}
+
+		outgoing.set(request.toUserId, request);
+		this.requestsById.set(request.id, request);
 	}
 
-	private removeRequest(fromUserId: string, toUserId: string) {
-		const incoming = this.friendRequests.get(toUserId);
+	private removeRequest(request: FriendRequest) {
+		this.requestsById.delete(request.id);
 
-		if (!incoming) return;
+		const incoming = this.incomingRequests.get(request.toUserId);
 
-		incoming.delete(fromUserId);
+		if (incoming) {
+			incoming.delete(request.fromUserId);
 
-		if (incoming.size === 0) {
-			this.friendRequests.delete(toUserId);
+			if (incoming.size === 0) {
+				this.incomingRequests.delete(request.toUserId);
+			}
+		}
+
+		const outgoing = this.outgoingRequests.get(request.fromUserId);
+
+		if (outgoing) {
+			outgoing.delete(request.toUserId);
+
+			if (outgoing.size === 0) {
+				this.outgoingRequests.delete(request.fromUserId);
+			}
 		}
 	}
 
 	getPendingRequest(fromUserId: string, toUserId: string) {
-		return this.friendRequests
+		return this.incomingRequests
 			.get(toUserId)
 			?.get(fromUserId);
 	}
 
 	getIncomingRequests(userId: string) {
 		return [
-			...(this.friendRequests.get(userId)?.values() ?? []),
+			...(this.incomingRequests.get(userId)?.values() ?? []),
 		];
+	}
+
+	getOutgoingRequests(userId: string) {
+		return [...(this.outgoingRequests.get(userId)?.values() ?? [])];
 	}
 
 	async sendRequest(fromId: string, toId: string) {
@@ -154,22 +187,23 @@ export class FriendsStore {
 		}
 	}
 
+	async unsendRequest(requestId: string) {
+		const request = this.requestsById.get(requestId);
+
+		if (!request) return null;
+
+		await db.delete(friendRequests).where(eq(friendRequests.id, requestId));
+
+		this.removeRequest(request);
+
+		return request;
+	}
+
 	async acceptRequest(requestId: string) {
 		try {
-			const request = await db.query.friendRequests.findFirst({
-				where: (fr, { eq }) =>
-					eq(fr.id, requestId),
-				with: {
-					fromUser: true,
-					toUser: true
-				}
-			});
+			const request = this.requestsById.get(requestId);
 
 			if (!request) return null;
-
-			await db
-				.delete(friendRequests)
-				.where(eq(friendRequests.id, requestId));
 
 			const user1Id =
 				request.fromUserId < request.toUserId
@@ -181,34 +215,26 @@ export class FriendsStore {
 					? request.toUserId
 					: request.fromUserId;
 
-			await db.insert(friends).values({
-				user1Id,
-				user2Id,
-			});
+			await db.transaction(async (tx) => {
+				await tx.delete(friendRequests).where(eq(friendRequests.id, requestId));
+				await tx.insert(friends).values({
+					user1Id,
+					user2Id,
+				});
+			})
 
-			this.removeRequest(request.fromUserId, request.toUserId);
+			this.removeRequest(request);
 
-			return {
-				id: request.id,
-				createdAt: request.createdAt,
-				fromUserId: request.fromUserId,
-				toUserId: request.toUserId,
-				updatedAt: request.updatedAt,
-				fromUsername: request.fromUser.username,
-				toUsername: request.toUser.username
-			};
+			return request;
 		} catch (err) {
 			console.error(err);
-			return false;
+			return null;
 		}
 	}
 
 	async rejectRequest(requestId: string) {
 		try {
-			const request = await db.query.friendRequests.findFirst({
-				where: (fr, { eq }) =>
-					eq(fr.id, requestId)
-			});
+			const request = this.requestsById.get(requestId);
 
 			if (!request) return null;
 
@@ -216,7 +242,7 @@ export class FriendsStore {
 				.delete(friendRequests)
 				.where(eq(friendRequests.id, requestId));
 
-			this.removeRequest(request.fromUserId, request.toUserId);
+			this.removeRequest(request);
 
 			return request;
 		} catch (err) {

@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const FriendRequestDropDown = () => {
-	const friendRequests = useFriendRequestStore((state) => state.friendRequests);
+	const incomingFriendRequests = useFriendRequestStore((state) => state.incomingFriendRequests);
 
 	const [
 		messageOpen,
@@ -70,9 +70,9 @@ const FriendRequestDropDown = () => {
 			>
 				<Mail size={20} />
 
-				{friendRequests.length > 0 && (
+				{incomingFriendRequests.length > 0 && (
 					<span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold">
-						{friendRequests.length}
+						{incomingFriendRequests.length}
 					</span>
 				)}
 
@@ -86,7 +86,7 @@ const FriendRequestDropDown = () => {
 						Friend Requests
 					</div>
 
-					{friendRequests.length === 0 ? (
+					{incomingFriendRequests.length === 0 ? (
 
 						<div className="p-6 text-center text-zinc-400">
 							No pending friend requests
@@ -94,7 +94,7 @@ const FriendRequestDropDown = () => {
 
 					) : (
 
-						friendRequests.map((request) => (
+						incomingFriendRequests.map((request) => (
 
 							<div
 								key={request.id}

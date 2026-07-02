@@ -20,7 +20,8 @@ export default function SocketProvider() {
 
 	const setPlayers = useOnlineStore((state) => state.setPlayers);
 	const setChallenges = useChallengeStore((state) => state.setChallenges);
-	const setFriendRequests = useFriendRequestStore((state) => state.setFriendRequests);
+	const setIncomingFriendRequests = useFriendRequestStore((state) => state.setIncomingFriendRequests);
+	const setOutgoingFriendRequests = useFriendRequestStore((state) => state.setOutgoingFriendRequests);
 	const addFriend = useFriendsStore((state) => state.addFriend);
 	// const setGames = useGamesStore((state) => state.setGames);
 
@@ -40,8 +41,9 @@ export default function SocketProvider() {
 
 	// Handle friend requests
 	useEffect(() => {
-		const handleUpdateFriendRequest = (friendRequests: FriendRequest[]) => {
-			setFriendRequests(friendRequests);
+		const handleUpdateFriendRequest = ({incoming, outgoing}: {incoming: FriendRequest[], outgoing: FriendRequest[]}) => {
+			setIncomingFriendRequests(incoming);
+			setOutgoingFriendRequests(outgoing);
 		}
 
 		const handleAcceptFriendRequest = (friend: Friend) => {

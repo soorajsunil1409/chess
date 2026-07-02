@@ -34,7 +34,10 @@ export const emitFriendRequests = (
 	if (toUserOnline) {
 		io.to(toUserOnline.socketId).emit(
 			"friend_request:update",
-			friendsStore.getIncomingRequests(targetUserId)
+			{
+				incoming: friendsStore.getIncomingRequests(targetUserId),
+				outgoing: friendsStore.getOutgoingRequests(targetUserId),
+			}
 		);
 	}
 }

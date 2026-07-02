@@ -10,6 +10,7 @@ import { sendFriendRequest } from "@/lib/friends/sendFriendRequest";
 import { useFriendRequestStore } from "@/store/friendRequestStore";
 import { acceptFriendRequest } from "@/lib/friends/acceptFriendRequest";
 import { rejectFriendRequest } from "@/lib/friends/rejectFriendRequest";
+import { unsendFriendRequest } from "@/lib/friends/unsendFriendRequest";
 
 const SearchPageWidget = ({
 	users,
@@ -18,7 +19,8 @@ const SearchPageWidget = ({
 }) => {
 	const [sendingRequest, setSendingRequest] = useState<boolean>(false);
 
-	const friendRequests = useFriendRequestStore((state) => state.friendRequests)
+	const incomingFriendRequests = useFriendRequestStore((state) => state.incomingFriendRequests);
+	const outgoingFriendRequests = useFriendRequestStore((state) => state.outgoingFriendRequests);
 	const friendIds = useFriendsStore((state) => state.friendIds);
 	const friends = users.filter((user) => friendIds.has(user.id));
 	const otherPlayers = users.filter((user) => !friendIds.has(user.id));
@@ -60,13 +62,24 @@ const SearchPageWidget = ({
 		}
 	};
 
+	const handleUnsendFriendRequest = async(requestId: string) => {
+		const res = await unsendFriendRequest(requestId);
+
+		if (res.success) {
+			toast.success("Request declined");
+		} else {
+			toast.error(res.error ?? "Failed to decline the request");
+		}
+	}
+
 	const renderUserRow = (
 		user: TUser,
 		index: number,
 		total: number,
 		isFriend: boolean
 	) => {
-		const requestExists = friendRequests.find((request) => request.fromUserId === user.id);
+		const incomingRequest = incomingFriendRequests.find((request) => request.fromUserId === user.id);
+		const outgoingRequest = outgoingFriendRequests.find((request) => request.toUserId === user.id);
 		// console.log(requestExists);
 
 		return (
@@ -114,17 +127,26 @@ const SearchPageWidget = ({
 					</Link>
 
 					{!isFriend && (
-						requestExists ? (
+						incomingRequest ? (
 							<div className="flex items-center gap-2">
 								<button
-									onClick={() => handleAcceptFriendRequest(requestExists.id)}
+									onClick={() => handleAcceptFriendRequest(incomingRequest.id)}
 									className="rounded-lg bg-green-600 p-2 transition hover:bg-green-500"
 								>
 									<Check size={16} />
 								</button>
 
 								<button
-									onClick={() => handleRejectFriendRequest(requestExists.id)}
+									onClick={() => handleRejectFriendRequest(incomingRequest.id)}
+									className="rounded-lg bg-red-600 p-2 transition hover:bg-red-500"
+								>
+									<X size={16} />
+								</button>
+							</div>
+						) : outgoingRequest ? (
+							<div className="flex items-center gap-2">
+								<button
+									onClick={() => handleUnsendFriendRequest(outgoingRequest.id)}
 									className="rounded-lg bg-red-600 p-2 transition hover:bg-red-500"
 								>
 									<X size={16} />

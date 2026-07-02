@@ -2,14 +2,20 @@ import { FriendRequest } from "@/lib/socket/stores/friends";
 import { create } from "zustand";
 
 interface FriendRequestStore {
-	friendRequests: FriendRequest[];
-	setFriendRequests: (players: FriendRequest[]) => void;
+	incomingFriendRequests: FriendRequest[];
+	setIncomingFriendRequests: (incomingFriendRequests: FriendRequest[]) => void;
+
+	outgoingFriendRequests: FriendRequest[];
+	setOutgoingFriendRequests: (outgoingFriendRequests: FriendRequest[]) => void;
 }
 
 export const useFriendRequestStore = create<FriendRequestStore>(
 	(set) => ({
-		friendRequests: [],
-		setFriendRequests: (friendRequests) =>
-			set({ friendRequests }),
+		incomingFriendRequests: [],
+		setIncomingFriendRequests: (incomingFriendRequests) =>
+			set({ incomingFriendRequests }),
+		outgoingFriendRequests: [],
+		setOutgoingFriendRequests: (outgoingFriendRequests) =>
+			set({ outgoingFriendRequests }),
 	})
 );

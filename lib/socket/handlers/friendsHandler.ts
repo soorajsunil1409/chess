@@ -24,9 +24,29 @@ export const registerFriendsHandlers = (
 		}
 
 		emitFriendRequests(io, targetUserId);
+		emitFriendRequests(io, request.fromUserId);
 
 		callback({ success: true });
 	});
+
+	socket.on("friend_request:unsend", async ({ requestId }, callback) => {
+		const request = await friendsStore.unsendRequest(
+			requestId
+		)
+
+		if (!request) {
+			callback({
+				success: false,
+				error: "Request deletion failed",
+			});
+			return;
+		}
+
+		emitFriendRequests(io, request.toUserId);
+		emitFriendRequests(io, request.fromUserId);
+
+		callback({ success: true })
+	})
 
 	socket.on("friend_request:decline", async ({ requestId }, callback) => {
 		const request = await friendsStore.rejectRequest(requestId);
@@ -43,6 +63,7 @@ export const registerFriendsHandlers = (
 		});
 
 		emitFriendRequests(io, request.toUserId);
+		emitFriendRequests(io, request.fromUserId);
 	});
 
 
@@ -60,7 +81,8 @@ export const registerFriendsHandlers = (
 			success: true
 		});
 
-		emitFriendRequests(io, userId);
+		emitFriendRequests(io, request.fromUserId);
+		emitFriendRequests(io, request.toUserId);
 
 		const fromUserOnline = onlineUsers.get(request.fromUserId);
 		const toUserOnline = onlineUsers.get(request.toUserId);
