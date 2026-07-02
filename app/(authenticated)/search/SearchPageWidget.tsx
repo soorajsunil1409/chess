@@ -42,8 +42,26 @@ const SearchPageWidget = ({
 		}
 	}
 
+	const handleUnsendFriendRequest = async (requestId: string) => {
+		if (!requestId) return;
+
+		setSendingRequest(true);
+		const res = await unsendFriendRequest(requestId);
+		setSendingRequest(false);
+
+		if (res.success) {
+			toast.success("Request declined");
+		} else {
+			toast.error(res.error ?? "Failed to decline the request");
+		}
+	}
+
 	const handleAcceptFriendRequest = async (requestId: string) => {
+		if (!requestId) return;
+
+		setSendingRequest(true);
 		const res = await acceptFriendRequest(requestId);
+		setSendingRequest(false);
 
 		if (res.success) {
 			toast.success("Request accepted");
@@ -53,7 +71,11 @@ const SearchPageWidget = ({
 	};
 
 	const handleRejectFriendRequest = async (requestId: string) => {
+		if (!requestId) return;
+
+		setSendingRequest(true);
 		const res = await rejectFriendRequest(requestId);
+		setSendingRequest(false);
 
 		if (res.success) {
 			toast.success("Request declined");
@@ -61,16 +83,6 @@ const SearchPageWidget = ({
 			toast.error(res.error ?? "Failed to decline the request");
 		}
 	};
-
-	const handleUnsendFriendRequest = async(requestId: string) => {
-		const res = await unsendFriendRequest(requestId);
-
-		if (res.success) {
-			toast.success("Request declined");
-		} else {
-			toast.error(res.error ?? "Failed to decline the request");
-		}
-	}
 
 	const renderUserRow = (
 		user: TUser,

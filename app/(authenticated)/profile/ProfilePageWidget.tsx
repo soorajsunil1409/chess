@@ -10,6 +10,11 @@ import ProfileSkeleton from "./ProfileSkeleton";
 import { useFriendsStore } from "@/store/friendsStore";
 import { sendFriendRequest } from "@/lib/friends/sendFriendRequest";
 import { toast } from "sonner";
+import { useFriendRequestStore } from "@/store/friendRequestStore";
+import { unsendFriendRequest } from "@/lib/friends/unsendFriendRequest";
+import { acceptFriendRequest } from "@/lib/friends/acceptFriendRequest";
+import { rejectFriendRequest } from "@/lib/friends/rejectFriendRequest";
+import { Check, Clock3, UserCheck, UserPlus, X } from "lucide-react";
 
 const ProfilePageWidget = ({
 	user,
@@ -21,7 +26,11 @@ const ProfilePageWidget = ({
 	const { data: session } = useSession();
 	const [sendingRequest, setSendingRequest] = useState<boolean>(false);
 
+	const incomingFriendRequests = useFriendRequestStore((state) => state.incomingFriendRequests);
+	const outgoingFriendRequests = useFriendRequestStore((state) => state.outgoingFriendRequests);
+
 	const isOwnProfile = session?.user?.id === user.id;
+	const isFriend = useFriendsStore((state) => state.isFriend(user.id));
 
 	// TODO same for challenges
 	const handleSendFriendRequest = async (toId: string) => {
@@ -39,6 +48,48 @@ const ProfilePageWidget = ({
 			toast.error(res.error);
 		}
 	}
+
+	const handleUnsendFriendRequest = async (requestId: string) => {
+		if (!requestId) return;
+
+		setSendingRequest(true);
+		const res = await unsendFriendRequest(requestId);
+		setSendingRequest(false);
+
+		if (res.success) {
+			toast.success("Request cancelled");
+		} else {
+			toast.error(res.error ?? "Failed to decline the request");
+		}
+	}
+
+	const handleAcceptFriendRequest = async (requestId: string) => {
+		if (!requestId) return;
+
+		setSendingRequest(true);
+		const res = await acceptFriendRequest(requestId);
+		setSendingRequest(false);
+
+		if (res.success) {
+			toast.success("Request accepted");
+		} else {
+			toast.error(res.error ?? "Failed to accept the request");
+		}
+	};
+
+	const handleRejectFriendRequest = async (requestId: string) => {
+		if (!requestId) return;
+
+		setSendingRequest(true);
+		const res = await rejectFriendRequest(requestId);
+		setSendingRequest(false);
+
+		if (res.success) {
+			toast.success("Request declined");
+		} else {
+			toast.error(res.error ?? "Failed to decline the request");
+		}
+	};
 
 	const stats = useMemo(() => {
 		let wins = 0;
@@ -65,7 +116,8 @@ const ProfilePageWidget = ({
 		return <ProfileSkeleton />;
 	}
 
-	const isFriend = useFriendsStore((state) => state.isFriend(user.id))
+	const incomingFriendRequest = incomingFriendRequests.find((request) => request.fromUserId === user.id);
+	const outgoingFriendRequest = outgoingFriendRequests.find((request) => request.toUserId === user.id);
 
 	return (
 		<main className="flex w-full items-center justify-center p-6 lg:min-h-0 bg-[#090909] flex-col flex-1">
@@ -95,23 +147,52 @@ const ProfilePageWidget = ({
 
 					</div>
 					{
-						!isOwnProfile && (
-							isFriend ? (
-								<button
-									className="rounded-lg border border-zinc-700 bg-[#111111] px-5 py-3 transition hover:bg-zinc-800"
-								>
-									Remove Friend
+						<div className="flex items-center gap-2">
+							{isFriend ? (
+								<button className="flex items-center gap-2 rounded-full border border-emerald-600/30 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-400 transition hover:bg-emerald-500/20">
+									<UserCheck className="h-4 w-4" />
+									Friends
 								</button>
+							) : outgoingFriendRequest ? (
+								<button
+									disabled={sendingRequest}
+									onClick={() => handleUnsendFriendRequest(outgoingFriendRequest.id)}
+									className="flex items-center gap-2 rounded-full border border-yellow-600/30 bg-yellow-500/10 px-3 py-2 text-sm font-medium text-yellow-400 transition hover:bg-yellow-500/20 disabled:opacity-50"
+								>
+									<Clock3 className="h-4 w-4" />
+									Pending
+								</button>
+							) : incomingFriendRequest ? (
+								<>
+									<button
+										disabled={sendingRequest}
+										onClick={() => handleAcceptFriendRequest(incomingFriendRequest.id)}
+										className="flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
+									>
+										<Check className="h-4 w-4" />
+										Accept
+									</button>
+
+									<button
+										disabled={sendingRequest}
+										onClick={() => handleRejectFriendRequest(incomingFriendRequest.id)}
+										className="flex items-center gap-2 rounded-full border border-red-600/30 bg-red-500/10 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+									>
+										<X className="h-4 w-4" />
+										Decline
+									</button>
+								</>
 							) : (
 								<button
 									disabled={sendingRequest}
 									onClick={() => handleSendFriendRequest(user.id)}
-									className="rounded-lg border border-zinc-700 bg-[#111111] px-5 py-3 transition hover:bg-zinc-800"
+									className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50"
 								>
+									<UserPlus className="h-4 w-4" />
 									Add Friend
 								</button>
-							)
-						)
+							)}
+						</div>
 					}
 				</div>
 
