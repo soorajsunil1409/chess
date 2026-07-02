@@ -14,7 +14,8 @@ import { useFriendRequestStore } from "@/store/friendRequestStore";
 import { unsendFriendRequest } from "@/lib/friends/unsendFriendRequest";
 import { acceptFriendRequest } from "@/lib/friends/acceptFriendRequest";
 import { rejectFriendRequest } from "@/lib/friends/rejectFriendRequest";
-import { Check, Clock3, UserCheck, UserPlus, X } from "lucide-react";
+import { Check, Clock3, UserCheck, UserMinus, UserPlus, X } from "lucide-react";
+import { removeFriend } from "@/lib/friends/removeFriend";
 
 const ProfilePageWidget = ({
 	user,
@@ -24,7 +25,9 @@ const ProfilePageWidget = ({
 	games: DbGameState[]
 }) => {
 	const { data: session } = useSession();
-	const [sendingRequest, setSendingRequest] = useState<boolean>(false);
+	const [loadingAction, setLoadingAction] = useState<
+		"send" | "unsend" | "accept" | "reject" | "remove" | null
+	>(null);
 
 	const incomingFriendRequests = useFriendRequestStore((state) => state.incomingFriendRequests);
 	const outgoingFriendRequests = useFriendRequestStore((state) => state.outgoingFriendRequests);
@@ -36,11 +39,9 @@ const ProfilePageWidget = ({
 	const handleSendFriendRequest = async (toId: string) => {
 		if (!toId) return;
 
-		setSendingRequest(true);
-
+		setLoadingAction("send");
 		const res = await sendFriendRequest(toId);
-
-		setSendingRequest(false);
+		setLoadingAction(null);
 
 		if (res.success) {
 			toast.success("Friend request sent");
@@ -52,9 +53,9 @@ const ProfilePageWidget = ({
 	const handleUnsendFriendRequest = async (requestId: string) => {
 		if (!requestId) return;
 
-		setSendingRequest(true);
+		setLoadingAction("unsend");
 		const res = await unsendFriendRequest(requestId);
-		setSendingRequest(false);
+		setLoadingAction(null);
 
 		if (res.success) {
 			toast.success("Request cancelled");
@@ -66,9 +67,9 @@ const ProfilePageWidget = ({
 	const handleAcceptFriendRequest = async (requestId: string) => {
 		if (!requestId) return;
 
-		setSendingRequest(true);
+		setLoadingAction("accept");
 		const res = await acceptFriendRequest(requestId);
-		setSendingRequest(false);
+		setLoadingAction(null);
 
 		if (res.success) {
 			toast.success("Request accepted");
@@ -80,14 +81,30 @@ const ProfilePageWidget = ({
 	const handleRejectFriendRequest = async (requestId: string) => {
 		if (!requestId) return;
 
-		setSendingRequest(true);
+		setLoadingAction("reject");
 		const res = await rejectFriendRequest(requestId);
-		setSendingRequest(false);
+		setLoadingAction(null);
 
 		if (res.success) {
 			toast.success("Request declined");
 		} else {
 			toast.error(res.error ?? "Failed to decline the request");
+		}
+	};
+
+	const handleRemoveFriend = async (userId: string) => {
+		if (!session?.user?.id || !userId) return;
+
+		// console.log("test");
+		const user1Id = session.user.id;
+		const user2Id = userId;
+
+		setLoadingAction("remove");
+		const res = await removeFriend(user1Id, user2Id);
+		setLoadingAction(null);
+
+		if (!res.success) {
+			toast.error(res.error ?? "Failed to remove friend");
 		}
 	};
 
@@ -149,13 +166,27 @@ const ProfilePageWidget = ({
 					{
 						<div className="flex items-center gap-2">
 							{isFriend ? (
-								<button className="flex items-center gap-2 rounded-full border border-emerald-600/30 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-400 transition hover:bg-emerald-500/20">
-									<UserCheck className="h-4 w-4" />
-									Friends
-								</button>
+								<div className="flex items-center gap-2">
+									<button
+										disabled
+										className="flex items-center gap-2 rounded-full border border-emerald-600/30 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-400"
+									>
+										<UserCheck className="h-4 w-4" />
+										Friends
+									</button>
+
+									<button
+										disabled={loadingAction === "remove"}
+										onClick={() => handleRemoveFriend(user.id)}
+										className="flex items-center gap-2 rounded-full border border-red-600/30 bg-red-500/10 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/20"
+									>
+										<UserMinus className="h-4 w-4" />
+										Remove
+									</button>
+								</div>
 							) : outgoingFriendRequest ? (
 								<button
-									disabled={sendingRequest}
+									disabled={loadingAction === "unsend"}
 									onClick={() => handleUnsendFriendRequest(outgoingFriendRequest.id)}
 									className="flex items-center gap-2 rounded-full border border-yellow-600/30 bg-yellow-500/10 px-3 py-2 text-sm font-medium text-yellow-400 transition hover:bg-yellow-500/20 disabled:opacity-50"
 								>
@@ -165,7 +196,7 @@ const ProfilePageWidget = ({
 							) : incomingFriendRequest ? (
 								<>
 									<button
-										disabled={sendingRequest}
+										disabled={loadingAction === "accept"}
 										onClick={() => handleAcceptFriendRequest(incomingFriendRequest.id)}
 										className="flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
 									>
@@ -174,7 +205,7 @@ const ProfilePageWidget = ({
 									</button>
 
 									<button
-										disabled={sendingRequest}
+										disabled={loadingAction === "reject"}
 										onClick={() => handleRejectFriendRequest(incomingFriendRequest.id)}
 										className="flex items-center gap-2 rounded-full border border-red-600/30 bg-red-500/10 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
 									>
@@ -184,7 +215,7 @@ const ProfilePageWidget = ({
 								</>
 							) : (
 								<button
-									disabled={sendingRequest}
+									disabled={loadingAction === "send"}
 									onClick={() => handleSendFriendRequest(user.id)}
 									className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:opacity-50"
 								>

@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { friendRequests, friends } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 
 export type FriendRequest = {
 	id: string;
@@ -245,6 +245,44 @@ export class FriendsStore {
 			this.removeRequest(request);
 
 			return request;
+		} catch (err) {
+			console.error(err);
+			return null;
+		}
+	}
+
+	async removeFriend(user1Id: string, user2Id: string) {
+		try {
+			const friendQuery = await db.query.friends.findFirst({
+				where: (friend, { eq, or, and }) =>
+					or(
+						and(
+							eq(friend.user1Id, user1Id),
+							eq(friend.user2Id, user2Id)
+						),
+						and(
+							eq(friend.user1Id, user2Id),
+							eq(friend.user2Id, user1Id)
+						),
+					)
+			});
+
+			if (!friendQuery) return null;
+
+			await db.delete(friends).where(
+				or(
+					and(
+						eq(friends.user1Id, user1Id),
+						eq(friends.user2Id, user2Id)
+					),
+					and(
+						eq(friends.user1Id, user2Id),
+						eq(friends.user2Id, user1Id)
+					),
+				)
+			)
+
+			return friendQuery;
 		} catch (err) {
 			console.error(err);
 			return null;

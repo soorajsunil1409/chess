@@ -113,4 +113,38 @@ export const registerFriendsHandlers = (
 			);
 		}
 	});
+
+	socket.on("friend:remove", async ({ user1Id, user2Id }, callback) => {
+		const friendObject = await friendsStore.removeFriend(user1Id, user2Id);
+
+		if (!friendObject) {
+			callback({
+				success: false,
+				error: "Friend object not found"
+			})
+			return;
+		}
+
+		const user1 = onlineUsers.get(friendObject.user1Id);
+
+		if (user1) {
+			io.to(user1.socketId).emit(
+				"friend:removed",
+				{
+					userId: friendObject.user2Id
+				}
+			);
+		}
+
+		const user2 = onlineUsers.get(friendObject.user2Id);
+
+		if (user2) {
+			io.to(user2.socketId).emit(
+				"friend:removed",
+				{
+					userId: friendObject.user1Id
+				}
+			);
+		}
+	})
 };

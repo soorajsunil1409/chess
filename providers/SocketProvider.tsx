@@ -23,6 +23,7 @@ export default function SocketProvider() {
 	const setIncomingFriendRequests = useFriendRequestStore((state) => state.setIncomingFriendRequests);
 	const setOutgoingFriendRequests = useFriendRequestStore((state) => state.setOutgoingFriendRequests);
 	const addFriend = useFriendsStore((state) => state.addFriend);
+	const removeFriend = useFriendsStore((state) => state.removeFriend);
 	// const setGames = useGamesStore((state) => state.setGames);
 
 	// Listener to update online Players
@@ -39,25 +40,31 @@ export default function SocketProvider() {
 		};
 	}, [setPlayers]);
 
-	// Handle friend requests
+	// Handle friend requests / remove friends
 	useEffect(() => {
-		const handleUpdateFriendRequest = ({incoming, outgoing}: {incoming: FriendRequest[], outgoing: FriendRequest[]}) => {
+		const handleUpdateFriendRequest = ({ incoming, outgoing }: { incoming: FriendRequest[], outgoing: FriendRequest[] }) => {
 			setIncomingFriendRequests(incoming);
 			setOutgoingFriendRequests(outgoing);
 		}
 
 		const handleAcceptFriendRequest = (friend: Friend) => {
-			// console.log(friend);
 			addFriend(friend);
 			toast.success(`${friend.user.username} added as friend.`);
+		}
+		
+		const handleFriendRemoved = ({ userId }: { userId: string }) => {
+			removeFriend(userId);
+			toast.success(`Removal successful`);
 		}
 
 		socket.on("friend_request:update", handleUpdateFriendRequest);
 		socket.on("friend_request:accepted", handleAcceptFriendRequest);
-		
+		socket.on("friend:removed", handleFriendRemoved);
+
 		return () => {
 			socket.off("friend_request:update", handleUpdateFriendRequest);
 			socket.off("friend_request:accepted", handleAcceptFriendRequest);
+			socket.off("friend:removed", handleFriendRemoved);
 		}
 	}, []);
 
