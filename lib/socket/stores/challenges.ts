@@ -7,11 +7,6 @@ export type Challenge = {
 	createdAt: number;
 };
 
-export const challenges = new Map<
-	string,
-	Challenge
->();
-
 export class ChallengeStore {
 	public incomingChallenges = new Map<
 		string,

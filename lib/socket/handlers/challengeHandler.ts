@@ -1,12 +1,11 @@
 import { Server, Socket } from "socket.io";
 import { onlineUsers } from "../stores/onlineUsers";
 import { emitChallengesForUser } from "../utils/emitChanges";
-import { chessGames, games } from "../stores/games";
 import { Chess } from "chess.js";
 import { db } from "@/db";
 import { gamesTable } from "@/db/schema";
 import { initializeGame } from "@/lib/chess";
-import { challengeStore } from "../server";
+import { challengeStore, gamesStore } from "../server";
 
 
 export const registerChallengeHandlers = (
@@ -75,42 +74,16 @@ export const registerChallengeHandlers = (
 		emitChallengesForUser(io, challenger.userId);
 		emitChallengesForUser(io, acceptor.userId);
 
-		const gameId = crypto.randomUUID();
+		const response = await gamesStore.createGame(challenge);
 
-		const newChess = new Chess();
-
-		chessGames.set(gameId, newChess);
-
-		const game = initializeGame(gameId, newChess, challenge);
-
-		games.set(gameId, game);
-
-		try {
-			await db.insert(gamesTable).values({
-				id: gameId,
-
-				whitePlayerId: game.whitePlayerId,
-				blackPlayerId: game.blackPlayerId,
-
-				whitePlayerUsername: game.whitePlayerUsername,
-				blackPlayerUsername: game.blackPlayerUsername,
-
-				fen: newChess.fen(),
-				pgn: newChess.pgn(),
-
-				status: "active",
-			});
-		} catch (error) {
-			games.delete(gameId);
-			chessGames.delete(gameId);
-
+		if (!response.success) {
 			callback({
 				success: false,
-				error: "Game creation failed",
+				error: response.error
 			});
-
-			return;
 		}
+
+		const gameId = response.gameId;
 
 		io.to(challenger.socketId).emit("game:start", {
 			gameId,
