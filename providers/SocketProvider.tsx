@@ -7,12 +7,10 @@ import { useOnlineStore } from "@/store/onlineStore";
 import { useChallengeStore } from "@/store/challengeStore";
 import { Challenge } from "@/lib/socket/stores/challenges";
 import { useRouter } from "next/navigation";
-import { useGamesStore } from "@/store/gamesStore";
 import { Friend, FriendRequest } from "@/lib/socket/stores/friends";
 import { useFriendRequestStore } from "@/store/friendRequestStore";
 import { toast } from "sonner";
 import { useFriendsStore } from "@/store/friendsStore";
-// import { getGamesFromUserId } from "@/lib/db/getGames";
 
 export default function SocketProvider() {
 	const { data: session, status } = useSession();
@@ -24,7 +22,6 @@ export default function SocketProvider() {
 	const setOutgoingFriendRequests = useFriendRequestStore((state) => state.setOutgoingFriendRequests);
 	const addFriend = useFriendsStore((state) => state.addFriend);
 	const removeFriend = useFriendsStore((state) => state.removeFriend);
-	// const setGames = useGamesStore((state) => state.setGames);
 
 	// Listener to update online Players
 	useEffect(() => {

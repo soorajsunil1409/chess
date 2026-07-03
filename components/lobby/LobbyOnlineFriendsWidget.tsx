@@ -1,7 +1,12 @@
+import { acceptChallengeRequest } from "@/lib/challenges/acceptChallengeRequest";
+import { declineChallengeRequest } from "@/lib/challenges/declineChallengeRequest";
+import { sendChallengeRequest } from "@/lib/challenges/sendChallengeRequest";
 import { socket } from "@/lib/socket/socket";
 import { Challenge } from "@/lib/socket/stores/challenges";
 import { Friend } from "@/lib/socket/stores/friends";
 import { useChallengeStore } from "@/store/challengeStore";
+import { useState } from "react";
+import { toast } from "sonner";
 
 type LobbyOnlineFriendsWidgetProps = {
 	onlineFriends: Friend[];
@@ -10,19 +15,46 @@ type LobbyOnlineFriendsWidgetProps = {
 const LobbyOnlineFriendsWidget = ({
 	onlineFriends
 }: LobbyOnlineFriendsWidgetProps) => {
+	const [loadingState, setLoadingState] = useState<
+		"send" | "accept" | "decline" | null
+	>(null);
+
 	const challenges = useChallengeStore((state) => state.challenges);
 
-	// TODO move these socket emits to a separate file
-	const sendChallenge = (targetUserId: string) => {
-		socket.emit("challenge:send", { targetUserId });
+	const sendChallenge = async (targetUserId: string) => {
+		setLoadingState("send");
+		const res = await sendChallengeRequest(targetUserId);
+		setLoadingState(null);
+		
+		if (res.success) {
+			toast.success("Challenge sent");
+		} else {
+			toast.error(res.error);
+		}
 	}
 
-	const acceptChallenge = (challenge: Challenge) => {
-		socket.emit("challenge:accept", challenge.challengeId);
+	const acceptChallenge = async (challenge: Challenge) => {
+		setLoadingState("accept");
+		const res = await acceptChallengeRequest(challenge.challengeId);
+		setLoadingState(null);
+		
+		if (res.success) {
+			toast.success("Challenge accepted");
+		} else {
+			toast.error(res.error);
+		}
 	};
 
-	const declineChallenge = (challenge: Challenge) => {
-		socket.emit("challenge:decline", challenge.challengeId);
+	const declineChallenge = async (challenge: Challenge) => {
+		setLoadingState("decline");
+		const res = await declineChallengeRequest(challenge.challengeId);
+		setLoadingState(null);
+		
+		if (res.success) {
+			toast.success("Challenge declined");
+		} else {
+			toast.error(res.error);
+		}
 	};
 
 	return (
@@ -92,21 +124,24 @@ const LobbyOnlineFriendsWidget = ({
 								{incomingChallenge ? (
 									<div className="flex items-center gap-2">
 										<button
+											disabled={loadingState === "accept"}
 											onClick={() => acceptChallenge(incomingChallenge)}
 											className="rounded-lg bg-green-600 px-4 py-2 font-medium text-white transition hover:bg-green-700"
-										>
+											>
 											Accept
 										</button>
 
 										<button
+											disabled={loadingState === "decline"}
 											onClick={() => declineChallenge(incomingChallenge)}
 											className="rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition hover:bg-red-700"
-										>
+											>
 											Reject
 										</button>
 									</div>
 								) : (
 									<button
+										disabled={loadingState === "send"}
 										onClick={() => sendChallenge(player.user.id)}
 										className="rounded-lg bg-white px-5 py-2 font-semibold text-black transition hover:bg-zinc-200"
 									>

@@ -12,6 +12,7 @@ import { emitChallengesForUser, emitFriendRequests } from "./utils/emitChanges";
 import { registerGameHandlers } from "./handlers/gameHandler";
 import { registerFriendsHandlers } from "./handlers/friendsHandler";
 import { FriendsStore } from "./stores/friends";
+import { ChallengeStore } from "./stores/challenges";
 
 const httpServer = createServer();
 
@@ -24,8 +25,11 @@ const io = new Server(httpServer, {
 });
 
 initializeGames()
+
 export const friendsStore = new FriendsStore();
 friendsStore.init();
+
+export const challengeStore = new ChallengeStore();
 
 // Fetch all the db Users;
 
