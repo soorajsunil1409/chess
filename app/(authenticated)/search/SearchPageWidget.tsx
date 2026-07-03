@@ -25,7 +25,6 @@ const SearchPageWidget = ({
 	const friends = users.filter((user) => friendIds.has(user.id));
 	const otherPlayers = users.filter((user) => !friendIds.has(user.id));
 
-	// TODO same for challenges
 	const handleSendFriendRequest = async (toId: string) => {
 		if (!toId) return;
 

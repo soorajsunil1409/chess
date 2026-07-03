@@ -7,11 +7,12 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { registerChallengeHandlers } from "./handlers/challengeHandler";
 import { onlineUsers } from "./stores/onlineUsers";
-import { initializeGames } from "./utils/gameUtils";
 import { emitChallengesForUser, emitFriendRequests } from "./utils/emitChanges";
 import { registerGameHandlers } from "./handlers/gameHandler";
 import { registerFriendsHandlers } from "./handlers/friendsHandler";
 import { FriendsStore } from "./stores/friends";
+import { ChallengeStore } from "./stores/challenges";
+import { GamesStore } from "./stores/games";
 
 const httpServer = createServer();
 
@@ -23,9 +24,13 @@ const io = new Server(httpServer, {
 	}
 });
 
-initializeGames()
+export const gamesStore = new GamesStore();
+gamesStore.init()
+
 export const friendsStore = new FriendsStore();
 friendsStore.init();
+
+export const challengeStore = new ChallengeStore();
 
 // Fetch all the db Users;
 

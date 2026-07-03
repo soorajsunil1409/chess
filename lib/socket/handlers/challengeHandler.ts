@@ -1,216 +1,127 @@
 import { Server, Socket } from "socket.io";
 import { onlineUsers } from "../stores/onlineUsers";
 import { emitChallengesForUser } from "../utils/emitChanges";
-import { challenges } from "../stores/challenges";
-import { chessGames, games } from "../stores/games";
 import { Chess } from "chess.js";
 import { db } from "@/db";
-import {gamesTable} from "@/db/schema";
+import { gamesTable } from "@/db/schema";
 import { initializeGame } from "@/lib/chess";
+import { challengeStore, gamesStore } from "../server";
 
 
 export const registerChallengeHandlers = (
 	io: Server, socket: Socket, userId: string
 ) => {
-	socket.on("challenge:send", ({ targetUserId }) => {
+	socket.on("challenge:send", ({ targetUserId }, callback) => {
 		const challenger = onlineUsers.get(userId);
 		const target = onlineUsers.get(targetUserId);
 
 		if (!challenger || !target) {
+			callback({
+				success: false,
+				error: "User is offline",
+			});
 			return;
 		}
 
-		const existingChallenge = challenges.values().find(
-			(challenge) =>
-			(challenge.fromUserId === challenger.userId &&
-				challenge.toUserId === target.userId)
-		)
-
-		if (existingChallenge) {
-			io.to(challenger.socketId).emit("challenge:error", "Challenge already sent");
+		if (
+			challengeStore.hasChallenge(userId, targetUserId) ||
+			challengeStore.hasChallenge(targetUserId, userId)
+		) {
+			callback({
+				success: false,
+				error: "Challenge already exists",
+			});
 			return;
 		}
 
-		const challengeId = crypto.randomUUID();
-
-		const challengeObject = {
-			challengeId: challengeId,
+		const challenge = challengeStore.createChallenge({
 			fromUserId: userId,
 			fromUsername: challenger.username,
 			toUserId: targetUserId,
 			toUsername: target.username,
-			createdAt: Date.now()
-		}
+		});
 
-		challenges.set(
-			challengeId,
-			challengeObject
-		);
-
-		emitChallengesForUser(io, target.userId);
+		emitChallengesForUser(io, userId);
+		emitChallengesForUser(io, targetUserId);
 
 		console.log(
-			`${challenger.username} challenged ${target.username}`
+			`${challenge.fromUsername} challenged ${challenge.toUsername}`
 		);
+		callback({ success: true });
 	});
 
-	socket.on("challenge:accept", async (challengeId: string) => {
-		const challenge =
-			challenges.get(
-				challengeId
-			);
-
-		if (!challenge)
-			return;
-
-		if (
-			challenge.toUserId !==
+	socket.on("challenge:accept", async ({ challengeId }, callback) => {
+		const challenge = challengeStore.acceptChallenge(
+			challengeId,
 			userId
-		)
-			return;
-
-		const challenger =
-			onlineUsers.get(
-				challenge.fromUserId
-			);
-
-		const acceptor =
-			onlineUsers.get(
-				challenge.toUserId
-			);
-
-		if (
-			!challenger ||
-			!acceptor
-		)
-			return;
-
-		challenges.delete(
-			challengeId
 		);
 
+		if (!challenge) {
+			return;
+		}
+
+		const challenger = onlineUsers.get(challenge.fromUserId);
+		const acceptor = onlineUsers.get(challenge.toUserId);
+
+		if (!challenger || !acceptor) {
+			callback({
+				success: false,
+				error: "Challenge error",
+			});
+			return;
+		}
+
+		emitChallengesForUser(io, challenger.userId);
 		emitChallengesForUser(io, acceptor.userId);
 
-		const gameId =
-			crypto.randomUUID();
+		const response = await gamesStore.createGame(challenge);
 
-		const newChess = new Chess();
+		if (!response.success) {
+			callback({
+				success: false,
+				error: response.error
+			});
+		}
 
-		chessGames.set(
+		const gameId = response.gameId;
+
+		io.to(challenger.socketId).emit("game:start", {
 			gameId,
-			newChess
-		);
-
-		const game = initializeGame(gameId, newChess, challenge)
-
-		games.set(gameId, game);
-
-		try {
-			await db.insert(gamesTable).values({
-			id: gameId,
-
-			whitePlayerId: game.whitePlayerId,
-			blackPlayerId: game.blackPlayerId,
-
-			whitePlayerUsername:
-				game.whitePlayerUsername,
-
-			blackPlayerUsername:
-				game.blackPlayerUsername,
-
-			fen: newChess.fen(),
-			pgn: newChess.pgn(),
-
-			status: "active",
 		});
-		}
-		catch (error) {
-			console.error(error);
 
-			socket.emit(
-				"game:error",
-				"Failed to create game"
-			);
+		io.to(acceptor.socketId).emit("game:start", {
+			gameId,
+		});
 
-			games.delete(gameId);
-			chessGames.delete(gameId);
-		}
-
-		io.to(
-			challenger.socketId
-		).emit(
-			"game:start",
-			{
-				gameId,
-			}
-		);
-
-		io.to(
-			acceptor.socketId
-		).emit(
-			"game:start",
-			{
-				gameId,
-			}
-		);
+		callback({ success: true });
 	});
 
-	socket.on(
-		"challenge:decline",
-		(challengeId: string) => {
-			const challenge =
-				challenges.get(
-					challengeId
-				);
+	socket.on("challenge:decline", ({ challengeId }, callback) => {
+		const challenge = challengeStore.declineChallenge(
+			challengeId,
+			userId
+		);
 
-			if (!challenge)
-				return;
-
-			if (
-				challenge.toUserId !==
-				userId
-			)
-				return;
-
-			const challenger =
-				onlineUsers.get(
-					challenge.fromUserId
-				);
-
-			challenges.delete(
-				challengeId
-			);
-
-			emitChallengesForUser(io, challenge.toUserId);
-
-			if (challenger) {
-				io.to(
-					challenger.socketId
-				).emit(
-					"challenge:declined",
-					`${challenge.toUsername} declined your challenge`
-				);
-			}
+		if (!challenge) {
+			callback({
+				success: false,
+				error: "Challenge does not exist",
+			});
+			return;
 		}
-	);
+
+		const challenger = onlineUsers.get(challenge.fromUserId);
+
+		emitChallengesForUser(io, challenge.fromUserId);
+		emitChallengesForUser(io, challenge.toUserId);
+
+		if (challenger) {
+			io.to(challenger.socketId).emit(
+				"challenge:declined",
+				`${challenge.toUsername} declined your challenge`
+			);
+		}
+
+		callback({ success: true });
+	});
 }
-
-
-setInterval(() => {
-	const now = Date.now();
-
-	for (const [
-		challengeId,
-		challenge,
-	] of challenges.entries()) {
-		if (
-			now -
-			challenge.createdAt >
-			60_000
-		) {
-			challenges.delete(
-				challengeId
-			);
-		}
-	}
-}, 10 * 1000);

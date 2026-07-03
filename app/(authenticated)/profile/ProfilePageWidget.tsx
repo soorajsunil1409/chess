@@ -37,7 +37,6 @@ const ProfilePageWidget = ({
 	const isOwnProfile = session?.user?.id === user.id;
 	const isFriend = useFriendsStore((state) => state.isFriend(user.id));
 
-	// TODO same for challenges
 	const handleSendFriendRequest = async (toId: string) => {
 		if (!toId) return;
 
