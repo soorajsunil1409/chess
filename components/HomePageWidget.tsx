@@ -3,8 +3,7 @@
 import PreLoginHomePage from "./PreLoginHomePage";
 import { LobbyPage } from "./LobbyPage";
 import { Session } from "next-auth";
-import { useEffect } from "react";
-import { useGamesStore } from "@/store/gamesStore";
+import { useFriendsStore } from "@/store/friendsStore";
 
 const HomePageWidget = ({
 	session,

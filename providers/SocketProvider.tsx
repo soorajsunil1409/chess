@@ -4,9 +4,14 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { socket } from "@/lib/socket/socket";
 import { useOnlineStore } from "@/store/onlineStore";
-import { Challenge, useChallengeStore } from "@/store/challengeStore";
+import { useChallengeStore } from "@/store/challengeStore";
+import { Challenge } from "@/lib/socket/stores/challenges";
 import { useRouter } from "next/navigation";
 import { useGamesStore } from "@/store/gamesStore";
+import { Friend, FriendRequest } from "@/lib/socket/stores/friends";
+import { useFriendRequestStore } from "@/store/friendRequestStore";
+import { toast } from "sonner";
+import { useFriendsStore } from "@/store/friendsStore";
 // import { getGamesFromUserId } from "@/lib/db/getGames";
 
 export default function SocketProvider() {
@@ -15,7 +20,11 @@ export default function SocketProvider() {
 
 	const setPlayers = useOnlineStore((state) => state.setPlayers);
 	const setChallenges = useChallengeStore((state) => state.setChallenges);
-	const setGames = useGamesStore((state) => state.setGames);
+	const setIncomingFriendRequests = useFriendRequestStore((state) => state.setIncomingFriendRequests);
+	const setOutgoingFriendRequests = useFriendRequestStore((state) => state.setOutgoingFriendRequests);
+	const addFriend = useFriendsStore((state) => state.addFriend);
+	const removeFriend = useFriendsStore((state) => state.removeFriend);
+	// const setGames = useGamesStore((state) => state.setGames);
 
 	// Listener to update online Players
 	useEffect(() => {
@@ -23,13 +32,40 @@ export default function SocketProvider() {
 			setPlayers(players);
 			console.log("players");
 		};
-		
+
 		socket.on("players:online", handlePlayers);
 
 		return () => {
 			socket.off("players:online", handlePlayers);
 		};
 	}, [setPlayers]);
+
+	// Handle friend requests / remove friends
+	useEffect(() => {
+		const handleUpdateFriendRequest = ({ incoming, outgoing }: { incoming: FriendRequest[], outgoing: FriendRequest[] }) => {
+			setIncomingFriendRequests(incoming);
+			setOutgoingFriendRequests(outgoing);
+		}
+
+		const handleAcceptFriendRequest = (friend: Friend) => {
+			addFriend(friend);
+			toast.success(`${friend.user.username} added as friend.`);
+		}
+		
+		const handleFriendRemoved = ({ userId }: { userId: string }) => {
+			removeFriend(userId);
+		}
+
+		socket.on("friend_request:update", handleUpdateFriendRequest);
+		socket.on("friend_request:accepted", handleAcceptFriendRequest);
+		socket.on("friend:removed", handleFriendRemoved);
+
+		return () => {
+			socket.off("friend_request:update", handleUpdateFriendRequest);
+			socket.off("friend_request:accepted", handleAcceptFriendRequest);
+			socket.off("friend:removed", handleFriendRemoved);
+		}
+	}, []);
 
 	// On login establish a socket and fetch all the games
 	useEffect(() => {

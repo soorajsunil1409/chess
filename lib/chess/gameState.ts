@@ -2,7 +2,7 @@ import { Chess, Move, PieceSymbol } from "chess.js";
 import { DbGameState, GameState, LastMove } from "../socket/stores/games";
 import { calculateMaterial } from "./material";
 import { getGameStatus } from "./status";
-import { Challenge } from "@/store/challengeStore";
+import { Challenge } from "@/lib/socket/stores/challenges";
 
 export const getDynamicGameState = (chess: Chess, result?: GameState["result"]) => {
 	const history = chess.history({ verbose: true });

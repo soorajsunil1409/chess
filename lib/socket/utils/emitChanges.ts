@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 import { challenges } from "../stores/challenges";
 import { onlineUsers } from "../stores/onlineUsers";
-import { Move } from "chess.js";
+import { friendsStore } from "../server";
 
 export const emitChallengesForUser = (
 	io: Server,
@@ -24,3 +24,20 @@ export const emitChallengesForUser = (
 		userChallenges
 	);
 };
+
+export const emitFriendRequests = (
+	io: Server,
+	targetUserId: string
+) => {
+	const toUserOnline = onlineUsers.get(targetUserId);
+
+	if (toUserOnline) {
+		io.to(toUserOnline.socketId).emit(
+			"friend_request:update",
+			{
+				incoming: friendsStore.getIncomingRequests(targetUserId),
+				outgoing: friendsStore.getOutgoingRequests(targetUserId),
+			}
+		);
+	}
+}

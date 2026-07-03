@@ -1,10 +1,6 @@
 import { index, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { users } from "./userSchema";
-
-export const friendRequestStatusEnum = pgEnum(
-	"friend_request_status",
-	["pending", "accepted", "declined"]
-);
+import { relations } from "drizzle-orm";
 
 export const friendRequests = pgTable(
 	"friend_requests",
@@ -18,10 +14,6 @@ export const friendRequests = pgTable(
 		toUserId: text("to_user_id")
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
-
-		status: friendRequestStatusEnum("status")
-			.notNull()
-			.default("pending"),
 
 		createdAt: timestamp("created_at")
 			.defaultNow()
@@ -65,3 +57,29 @@ export const friends = pgTable(
 		index("friends_user2_idx").on(table.user2Id),
 	]
 );
+
+export const friendRequestsRelations = relations(friendRequests, ({ one }) => ({
+	fromUser: one(users, {
+		fields: [friendRequests.fromUserId],
+		references: [users.id],
+		relationName: "friendRequestFromUser",
+	}),
+	toUser: one(users, {
+		fields: [friendRequests.toUserId],
+		references: [users.id],
+		relationName: "friendRequestToUser",
+	}),
+}));
+
+export const friendsRelations = relations(friends, ({ one }) => ({
+	user1: one(users, {
+		fields: [friends.user1Id],
+		references: [users.id],
+		relationName: "friendUser1",
+	}),
+	user2: one(users, {
+		fields: [friends.user2Id],
+		references: [users.id],
+		relationName: "friendUser2",
+	}),
+}));

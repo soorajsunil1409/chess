@@ -1,8 +1,8 @@
-import { socket } from "@/lib/socket/socket";
-import { Challenge, useChallengeStore } from "@/store/challengeStore";
-import { Bell, Check, Mail, Menu, Search, X } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { Session } from "next-auth";
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction } from "react";
+import FriendRequestDropDown from "./dropdowns/FriendRequestDropDown";
+import ChallengesDropDown from "./dropdowns/ChallengesDropDown";
 
 
 type NavbarLoggedInProps = {
@@ -22,44 +22,6 @@ const NavbarLoggedIn = ({
 	setSearch,
 	handleSearch,
 }: NavbarLoggedInProps) => {
-
-	const challenges =
-		useChallengeStore(
-			(state) => state.challenges
-		);
-
-	const [
-		challengeOpen,
-		setChallengeOpen,
-	] = useState(false);
-
-	const [
-		messageOpen,
-		setMessageOpen,
-	] = useState(false);
-
-
-	const acceptChallenge = (
-		challenge: Challenge
-	) => {
-		socket.emit(
-			"challenge:accept",
-			challenge.challengeId
-		);
-
-		setChallengeOpen(false);
-	};
-
-	const declineChallenge = (
-		challenge: Challenge
-	) => {
-		socket.emit(
-			"challenge:decline",
-			challenge.challengeId
-		);
-
-		setChallengeOpen(false);
-	};
 
 	return (
 		<nav className="flex h-16 items-center justify-between border-b border-zinc-800 bg-[#111111] px-6">
@@ -113,140 +75,10 @@ const NavbarLoggedIn = ({
 			<div className="flex items-center gap-3">
 
 				{/* Challenges */}
-
-				<div className="relative">
-
-					<button
-						onClick={() =>
-							setChallengeOpen(
-								!challengeOpen
-							)
-						}
-						className="relative rounded-lg p-2 transition hover:bg-zinc-800"
-					>
-
-						<Bell size={20} />
-
-						{challenges.length > 0 && (
-
-							<span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold">
-
-								{challenges.length}
-
-							</span>
-
-						)}
-
-					</button>
-
-					{challengeOpen && (
-
-						<div className="absolute z-100 right-0 mt-3 w-96 overflow-hidden rounded-xl border border-zinc-700 bg-[#181818] shadow-2xl">
-
-							<div className="border-b border-zinc-700 p-4 font-semibold">
-								Challenges
-							</div>
-
-							{challenges.length === 0 ? (
-
-								<div className="p-6 text-center text-zinc-400">
-									No pending challenges
-								</div>
-
-							) : (
-
-								challenges.map((challenge) => (
-
-									<div
-										key={challenge.challengeId}
-										className="flex items-center justify-between border-b border-zinc-800 p-4"
-									>
-
-										<div>
-
-											<div className="font-medium">
-												{
-													challenge.fromUsername
-												}
-											</div>
-
-											<div className="text-sm text-zinc-400">
-												challenged you
-											</div>
-
-										</div>
-
-										<div className="flex gap-2">
-
-											<button
-												onClick={() =>
-													acceptChallenge(
-														challenge
-													)
-												}
-												className="rounded-lg bg-green-600 p-2 hover:bg-green-500"
-											>
-
-												<Check size={16} />
-
-											</button>
-
-											<button
-												onClick={() =>
-													declineChallenge(
-														challenge
-													)
-												}
-												className="rounded-lg bg-red-600 p-2 hover:bg-red-500"
-											>
-
-												<X size={16} />
-
-											</button>
-
-										</div>
-
-									</div>
-
-								))
-
-							)}
-
-						</div>
-
-					)}
-
-				</div>
+				<ChallengesDropDown />
 
 				{/* Messages */}
-				<div className="relative">
-
-					<button
-						onClick={() =>
-							setMessageOpen(!messageOpen)
-						}
-						className="rounded-lg p-2 transition hover:bg-zinc-800"
-					>
-						<Mail size={20} />
-					</button>
-
-					{messageOpen && (
-
-						<div className="absolute right-0 mt-3 w-80 overflow-hidden rounded-xl border border-zinc-700 bg-[#181818] shadow-2xl">
-
-							<div className="border-b border-zinc-700 p-4 font-semibold">
-								Messages
-							</div>
-
-							<div className="flex h-40 items-center justify-center text-sm text-zinc-400">
-								No messages available.
-							</div>
-
-						</div>
-
-					)}
-
-				</div>
+				<FriendRequestDropDown />
 
 				{/* Navbar Profile */}
 
