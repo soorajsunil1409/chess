@@ -182,6 +182,7 @@ export const registerChallengeHandlers = (
 			);
 
 			emitChallengesForUser(io, challenge.toUserId);
+			emitChallengesForUser(io, challenge.fromUserId);
 
 			if (challenger) {
 				io.to(
