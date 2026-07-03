@@ -16,6 +16,8 @@ import { acceptFriendRequest } from "@/lib/friends/acceptFriendRequest";
 import { rejectFriendRequest } from "@/lib/friends/rejectFriendRequest";
 import { Check, Clock3, UserCheck, UserMinus, UserPlus, X } from "lucide-react";
 import { removeFriend } from "@/lib/friends/removeFriend";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 const ProfilePageWidget = ({
 	user,
@@ -175,14 +177,39 @@ const ProfilePageWidget = ({
 										Friends
 									</button>
 
-									<button
-										disabled={loadingAction === "remove"}
-										onClick={() => handleRemoveFriend(user.id)}
-										className="flex items-center gap-2 rounded-full border border-red-600/30 bg-red-500/10 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/20"
-									>
-										<UserMinus className="h-4 w-4" />
-										Remove
-									</button>
+									<AlertDialog>
+										<AlertDialogTrigger asChild>
+											<Button
+												variant="outline"
+												disabled={loadingAction === "remove"}
+												className="border-red-600/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+											>
+												<UserMinus className="h-4 w-4" />
+												Remove
+											</Button>
+										</AlertDialogTrigger>
+
+										<AlertDialogContent>
+											<AlertDialogHeader>
+												<AlertDialogTitle>Remove friend?</AlertDialogTitle>
+												<AlertDialogDescription>
+													Are you sure you want to remove this friend? You'll need to send a new
+													friend request if you want to connect again.
+												</AlertDialogDescription>
+											</AlertDialogHeader>
+
+											<AlertDialogFooter>
+												<AlertDialogCancel>Cancel</AlertDialogCancel>
+												<AlertDialogAction
+													disabled={loadingAction === "remove"}
+													onClick={() => handleRemoveFriend(user.id)}
+													className="bg-red-600 hover:bg-red-700"
+												>
+													{loadingAction === "remove" ? "Removing..." : "Remove Friend"}
+												</AlertDialogAction>
+											</AlertDialogFooter>
+										</AlertDialogContent>
+									</AlertDialog>
 								</div>
 							) : outgoingFriendRequest ? (
 								<button

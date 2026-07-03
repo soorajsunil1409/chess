@@ -54,7 +54,6 @@ export default function SocketProvider() {
 		
 		const handleFriendRemoved = ({ userId }: { userId: string }) => {
 			removeFriend(userId);
-			toast.success(`Removal successful`);
 		}
 
 		socket.on("friend_request:update", handleUpdateFriendRequest);
