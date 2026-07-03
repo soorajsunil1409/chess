@@ -11,9 +11,12 @@ export const registerGameHandlers = (
 	socket.on("game:join", (gameId: string) => {
 		const res = gamesStore.joinGame(gameId, userId);
 
+		console.log(res);
+
 		if (!res.success) {
 			return;
 		}
+
 
 		socket.join(gameId);
 
@@ -26,11 +29,14 @@ export const registerGameHandlers = (
 		"game:move",
 		async ({
 			gameId, from, to, promotion,
-		}) => {
+		}, callback) => {
 			const response = gamesStore.move(gameId, from, to, promotion, userId);
 
 			if (!response.success) {
-				// callback
+				callback({
+					success: false,
+					error: response.error
+				});
 				return;
 			}
 
@@ -43,11 +49,18 @@ export const registerGameHandlers = (
 			const { success, error } = await updateGameMove(game, response.chess, socket);
 
 			if (!success) {
-				// callback
+				callback({
+					success: false,
+					error: error
+				});
 				return;
 			}
-
+			
 			io.to(gameId).emit("game:update", game);
+
+			callback({
+				success: true,
+			});
 		}
 	);
 

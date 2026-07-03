@@ -120,7 +120,7 @@ export class GamesStore {
 		} as const;
 
 		return {
-			success: false,
+			success: true,
 			game: validation.game,
 			chess: validation.chess
 		}

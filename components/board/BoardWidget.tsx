@@ -4,6 +4,8 @@ import { GameState } from "@/lib/socket/stores/games";
 import { socket } from "@/lib/socket/socket";
 import CapturedPiecesWidget from "../CapturedPiecesWidget";
 import BoardPlayspace from "./BoardPlayspace";
+import { gameMove } from "@/lib/game/gameMove";
+import { toast } from "sonner";
 
 const BoardWidget = ({
 	gameState,
@@ -63,7 +65,7 @@ const BoardWidget = ({
 	const selectedLegalSquares = selectedLegalMoves.map((move) => move.to);
 	const selectedCapturableSquares = selectedLegalMoves.filter((move) => move.captured !== undefined).map((move) => move.to)
 
-	const handlePieceClick = (square: Square) => {
+	const handlePieceClick = async (square: Square) => {
 		if (isSubmitting) return;
 		const piece = chessRef.current.get(square);
 
@@ -77,15 +79,13 @@ const BoardWidget = ({
 			selectedLegalSquares.includes(square)
 		) {
 			setIsSubmitting(true);
-
-			socket.emit("game:move", {
-				gameId: gameId,
-				from: selectedSquare,
-				to: square,
-				promotion: "q"
-			})
-
+			const res = await gameMove(gameId, selectedSquare, square, "q");
 			setSelectedSquare(null);
+
+			if (!res.success) {
+				toast.error(res.error);
+				return;
+			}
 
 			return;
 		}
