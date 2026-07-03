@@ -239,7 +239,7 @@ const ProfilePageWidget = ({
 										Decline
 									</button>
 								</>
-							) : (
+							) : !isOwnProfile &&  (
 								<button
 									disabled={loadingAction === "send"}
 									onClick={() => handleSendFriendRequest(user.id)}
