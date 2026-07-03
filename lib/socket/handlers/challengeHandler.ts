@@ -1,7 +1,6 @@
 import { Server, Socket } from "socket.io";
 import { onlineUsers } from "../stores/onlineUsers";
 import { emitChallengesForUser } from "../utils/emitChanges";
-import { challenges } from "../stores/challenges";
 import { chessGames, games } from "../stores/games";
 import { Chess } from "chess.js";
 import { db } from "@/db";
@@ -153,23 +152,3 @@ export const registerChallengeHandlers = (
 		callback({ success: true });
 	});
 }
-
-
-setInterval(() => {
-	const now = Date.now();
-
-	for (const [
-		challengeId,
-		challenge,
-	] of challenges.entries()) {
-		if (
-			now -
-			challenge.createdAt >
-			60_000
-		) {
-			challenges.delete(
-				challengeId
-			);
-		}
-	}
-}, 10 * 1000);

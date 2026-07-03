@@ -1,7 +1,6 @@
 import { acceptChallengeRequest } from "@/lib/challenges/acceptChallengeRequest";
 import { declineChallengeRequest } from "@/lib/challenges/declineChallengeRequest";
 import { sendChallengeRequest } from "@/lib/challenges/sendChallengeRequest";
-import { socket } from "@/lib/socket/socket";
 import { Challenge } from "@/lib/socket/stores/challenges";
 import { Friend } from "@/lib/socket/stores/friends";
 import { useChallengeStore } from "@/store/challengeStore";

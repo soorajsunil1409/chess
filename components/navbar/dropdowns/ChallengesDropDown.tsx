@@ -3,9 +3,15 @@ import { useChallengeStore } from "@/store/challengeStore";
 import { Challenge } from "@/lib/socket/stores/challenges";
 import { Bell, Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { acceptChallengeRequest } from "@/lib/challenges/acceptChallengeRequest";
+import { toast } from "sonner";
+import { declineChallengeRequest } from "@/lib/challenges/declineChallengeRequest";
 
 const ChallengesDropDown = () => {
 	const challenges = useChallengeStore((state) => state.challenges);
+	const [loadingState, setLoadingState] = useState<
+		"accept" | "decline" | null
+	>(null);
 
 	const [challengeOpen, setChallengeOpen] = useState(false);
 
@@ -31,14 +37,28 @@ const ChallengesDropDown = () => {
 		};
 	}, []);
 
-	const acceptChallenge = (challenge: Challenge) => {
-		socket.emit("challenge:accept", challenge.challengeId);
-		setChallengeOpen(false);
+	const acceptChallenge = async (challenge: Challenge) => {
+		setLoadingState("accept");
+		const res = await acceptChallengeRequest(challenge.challengeId);
+		setLoadingState(null);
+
+		if (res.success) {
+			toast.success("Challenge accepted");
+		} else {
+			toast.error(res.error);
+		}
 	};
 
-	const declineChallenge = (challenge: Challenge) => {
-		socket.emit("challenge:decline", challenge.challengeId);
-		setChallengeOpen(false);
+	const declineChallenge = async (challenge: Challenge) => {
+		setLoadingState("decline");
+		const res = await declineChallengeRequest(challenge.challengeId);
+		setLoadingState(null);
+
+		if (res.success) {
+			toast.success("Challenge declined");
+		} else {
+			toast.error(res.error);
+		}
 	};
 
 	return (
@@ -107,19 +127,21 @@ const ChallengesDropDown = () => {
 								<div className="flex gap-2">
 
 									<button
+										disabled={loadingState === "accept"}
 										onClick={() =>
 											acceptChallenge(
 												challenge
 											)
 										}
 										className="rounded-lg bg-green-600 p-2 hover:bg-green-500"
-									>
+										>
 
 										<Check size={16} />
 
 									</button>
 
 									<button
+										disabled={loadingState === "decline"}
 										onClick={() =>
 											declineChallenge(
 												challenge
