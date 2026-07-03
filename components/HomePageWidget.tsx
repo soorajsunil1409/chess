@@ -1,9 +1,8 @@
 "use client";
 
+import { LobbyPage } from "./lobby/LobbyPage";
 import PreLoginHomePage from "./PreLoginHomePage";
-import { LobbyPage } from "./LobbyPage";
 import { Session } from "next-auth";
-import { useFriendsStore } from "@/store/friendsStore";
 
 const HomePageWidget = ({
 	session,

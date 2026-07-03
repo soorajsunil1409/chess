@@ -1,4 +1,5 @@
 import { db } from "@/db"
+import { Friend } from "../socket/stores/friends";
 
 export const getFriendsOfUserId = async (userId: string) => {
 	const fetchedFriends = await db.query.friends.findMany({
@@ -27,7 +28,6 @@ export const getFriendsOfUserId = async (userId: string) => {
 			user: {
 				id: user.id,
 				username: user.username,
-				createdAt: user.createdAt
 			},
 			createdAt: fr.createdAt
 		}
